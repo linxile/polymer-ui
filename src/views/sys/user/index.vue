@@ -85,13 +85,13 @@
 </template>
 
 <script setup lang="ts" name="SysUserIndex">
-import {useCrud} from "@/hooks";
-import {onMounted, reactive, ref} from "vue";
-import AddOrUpdate from "./add-or-update.vue";
-import {IHooksOptions} from "@/hooks/interface";
+import {useCrud} from '@/hooks/';
+import {onMounted, reactive, ref} from 'vue';
+import AddOrUpdate from './add-or-update.vue';
+import {IHooksOptions} from '@/types/api/common';
 import { useDeptListApi } from '@/api/sys/dept'
-import DataImport from "@/components/upload/dataImport.vue"
-import TreePanel from "@/components/tree-panel/index.vue"
+import DataImport from '@/components/upload/dataImport.vue'
+import TreePanel from '@/components/tree-panel/index.vue'
 import type { TreeSelect} from '@/types/api/common'
 
 const state: IHooksOptions = reactive({

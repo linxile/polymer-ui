@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import WangEditor from "@/components/wang-editor/index.vue";
+import { reactive, ref } from 'vue';
+import WangEditor from '@/components/wang-editor/index.vue';
 
 const visible = ref(false);
 const dataForm = reactive({

@@ -66,8 +66,8 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useProjectApi, useProjectSubmitApi } from '@/api/gen/project'
-import {IHooksOptions} from "@/hooks/interface";
-import {useCrud} from "@/hooks";
+import {IHooksOptions} from '@/types/api/common';
+import {useCrud} from '@/hooks';
 
 const state: IHooksOptions = reactive({
   exportUrl: '/gen/project/download/'

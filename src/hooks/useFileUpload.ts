@@ -2,7 +2,7 @@ import * as FileApi from '@/api/storage'
 import { UploadRequestOptions } from 'element-plus/es/components/upload/src/upload'
 import axios from 'axios'
 import request from '@/utils/request'
-import type {ApiResponse, AttachmentUploadResult, DataImportResult} from "@/types/api/common"
+import type {ApiResponse, AttachmentUploadResult, DataImportResult} from '@/types/api/common'
 
 /**
  * 数据文件导入参数接口

@@ -151,7 +151,7 @@
 
 <script setup name="CacheList">
 import { getCurrentInstance, ref } from 'vue'
-import { listCacheName, listCacheKey, getCacheValue, clearCacheName, clearCacheKey, clearCacheAll } from "@/api/monitor/cache";
+import { listCacheName, listCacheKey, getCacheValue, clearCacheName, clearCacheKey, clearCacheAll } from '@/api/monitor/cache';
 
 const { proxy } = getCurrentInstance();
 

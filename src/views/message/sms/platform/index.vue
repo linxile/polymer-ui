@@ -132,11 +132,11 @@
 </template>
 
 <script setup lang="ts" name="MessageSmsPlatformIndex">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./add-or-update.vue";
-import Send from "./send.vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './add-or-update.vue';
+import Send from './send.vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const tableRef = ref();
 

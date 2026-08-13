@@ -78,7 +78,7 @@ import {useUserStore} from '@/store/modules/user'
 import Password from '@/views/profile/password.vue'
 import UserInfo from '@/views/profile/user-info.vue'
 import {User} from '@element-plus/icons-vue'
-import FileUrlUtils from "@/utils/fileUrlUtils";
+import FileUrlUtils from '@/utils/fileUrlUtils';
 
 const userStore = useUserStore()
 const activeName = ref('info')

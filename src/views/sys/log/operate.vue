@@ -121,10 +121,10 @@
 </template>
 
 <script setup lang="ts" name="SysLogOperate">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import { IHooksOptions } from "@/hooks/interface";
-import OperateDetail from "./operate-detail.vue";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import { IHooksOptions } from '@/types/api/common';
+import OperateDetail from './operate-detail.vue';
 
 const state: IHooksOptions = reactive({
   dataListUrl: "/sys/log/operate/page",

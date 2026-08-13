@@ -69,11 +69,11 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import { IHooksOptions } from "@/hooks/interface";
-import { useMonitorUserLogoutApi } from "@/api/monitor/user";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import { IHooksOptions } from '@/types/api/common';
+import { useMonitorUserLogoutApi } from '@/api/monitor/user';
+import { ElMessage, ElMessageBox } from 'element-plus';
 
 const state: IHooksOptions = reactive({
   dataListUrl: "monitor/user/page",

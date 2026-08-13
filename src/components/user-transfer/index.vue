@@ -47,8 +47,8 @@ import { ref, watch, onMounted, PropType } from 'vue'
 import { ElTree, ElMessage } from 'element-plus'
 import { useDeptListApi } from '@/api/sys/dept'
 import { useListByDeptIdApi } from '@/api/sys/user'
-import TreePanel from "@/components/tree-panel/index.vue";
-import type {TreeSelect} from "@/types/api/common";
+import TreePanel from '@/components/tree-panel/index.vue';
+import type {TreeSelect} from '@/types/api/common';
 
 // 用户接口定义
 interface User {

@@ -94,10 +94,10 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { IHooksOptions } from "@/hooks/interface";
-import { useCrud } from "@/hooks";
-import { ElMessage } from "element-plus";
+import { reactive, ref } from 'vue';
+import { IHooksOptions } from '@/types/api/common';
+import { useCrud } from '@/hooks';
+import { ElMessage } from 'element-plus';
 
 const tableRef = ref();
 

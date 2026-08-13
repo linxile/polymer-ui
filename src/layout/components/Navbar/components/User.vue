@@ -23,10 +23,10 @@
 <script setup lang="ts">
 	import { useUserStore } from '@/store/modules/user'
 	import { ArrowDown } from '@element-plus/icons-vue'
-  import {onMounted, ref, watch} from "vue";
-  import FileUrlUtils from "@/utils/fileUrlUtils";
-  import {useRoute, useRouter} from "vue-router";
-  import useLockStore from "@/store/modules/lock";
+  import {onMounted, ref, watch} from 'vue';
+  import FileUrlUtils from '@/utils/fileUrlUtils';
+  import {useRoute, useRouter} from 'vue-router';
+  import useLockStore from '@/store/modules/lock';
 
 	const userStore = useUserStore()
   const route = useRoute()

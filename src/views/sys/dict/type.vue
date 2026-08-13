@@ -158,14 +158,14 @@
 </template>
 
 <script setup lang="ts" name="SysDictType">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./type-add-or-update.vue";
-import DataSql from "./data-sql.vue";
-import DictData from "./data.vue";
-import { IHooksOptions } from "@/hooks/interface";
-import {useRefreshTransCacheApi} from "@/api/sys/dict";
-import { ElMessage} from "element-plus";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './type-add-or-update.vue';
+import DataSql from './data-sql.vue';
+import DictData from './data.vue';
+import { IHooksOptions } from '@/types/api/common';
+import {useRefreshTransCacheApi} from '@/api/sys/dict';
+import { ElMessage} from 'element-plus';
 
 const tableRef = ref();
 
@@ -215,5 +215,5 @@ const {
   deleteBatchHandle,
   selectHandle,
   selectAllHandle,
-} = useCrud(state);
+} = useCrud(state, tableRef);
 </script>

@@ -68,7 +68,7 @@ import { useCrud } from '@/hooks'
 import {onMounted, reactive, ref, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import AddOrUpdate from './add-or-update.vue'
-import { IHooksOptions } from '@/hooks/interface'
+import { IHooksOptions } from '@/types/api/common'
 
 const route = useRoute()
 const currentPid = ref(0) // 当前父级ID

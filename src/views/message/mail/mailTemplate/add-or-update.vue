@@ -42,7 +42,7 @@ import { ElMessage } from 'element-plus/es'
 import WangEditor from '@/components/wang-editor/index.vue'
 import { useMailTemplateApi, useMailTemplateSubmitApi } from '@/api/message/mailTemplate'
 import { useMailAccountListApi } from '@/api/message/mailAccount'
-import {usePostListApi} from "@/api/sys/post";
+import {usePostListApi} from '@/api/sys/post';
 
 const emit = defineEmits(['refreshDataList'])
 

@@ -66,9 +66,9 @@
 // 导入必要的库和组件
 import {useCrud} from '@/hooks' // 封装的CRUD钩子
 import {reactive, ref} from 'vue'
-import {IHooksOptions} from '@/hooks/interface' // 类型定义
-import AddOrUpdate from "./add-or-update.vue";
-import DataImport from "@/components/upload/dataImport.vue";
+import {IHooksOptions} from '@/types/api/common' // 类型定义
+import AddOrUpdate from './add-or-update.vue';
+import DataImport from '@/components/upload/dataImport.vue';
 
 /**
  * 状态管理

@@ -124,12 +124,12 @@
 </template>
 
 <script setup lang="ts" name="SysRoleIndex">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./add-or-update.vue";
-import DataScope from "./data-scope.vue";
-import User from "./user.vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './add-or-update.vue';
+import DataScope from './data-scope.vue';
+import User from './user.vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const tableRef = ref();
 

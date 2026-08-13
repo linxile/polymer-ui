@@ -84,8 +84,8 @@
 	import { usePostListApi } from '@/api/sys/post'
 	import { useRoleListApi } from '@/api/sys/role'
 	import { useCityListApi } from '@/api/sys/city'
-  import type {AttachmentUploadResult} from "@/types/api/common"
-  import UploadComponent from "@/components/upload/index.vue";
+  import type {AttachmentUploadResult} from '@/types/api/common'
+  import UploadComponent from '@/components/upload/index.vue';
 
 	const emit = defineEmits(['refreshDataList'])
   const uploadRef = ref<InstanceType<typeof UploadComponent>>();

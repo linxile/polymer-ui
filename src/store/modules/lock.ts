@@ -1,4 +1,4 @@
-import {defineStore} from "pinia";
+import {defineStore} from 'pinia';
 
 const LOCK_KEY = 'screen-lock'
 const LOCK_PATH_KEY = 'screen-lock-path'

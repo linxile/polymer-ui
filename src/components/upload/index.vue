@@ -92,12 +92,12 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, View, Delete } from "@element-plus/icons-vue";
-import { ElMessage, UploadProps, UploadRequestOptions } from "element-plus";
-import { reactive, ref, computed, watch } from "vue";
-import { useFileUpload } from "@/hooks/useFileUpload";
-import FileUrlUtils from "@/utils/fileUrlUtils";
-import type {AttachmentUploadResult} from "@/types/api/common"
+import { Plus, View, Delete } from '@element-plus/icons-vue';
+import { ElMessage, UploadProps, UploadRequestOptions } from 'element-plus';
+import { reactive, ref, computed, watch } from 'vue';
+import { useFileUpload } from '@/hooks/useFileUpload';
+import FileUrlUtils from '@/utils/fileUrlUtils';
+import type {AttachmentUploadResult} from '@/types/api/common'
 
 // ==================== 类型定义 ====================
 

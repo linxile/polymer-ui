@@ -48,7 +48,7 @@
 <script setup lang="ts" name="BaseClassIndex">
 import { useCrud } from '@/hooks'
 import { reactive, ref } from 'vue'
-import { IHooksOptions } from '@/hooks/interface'
+import { IHooksOptions } from '@/types/api/common'
 import AddOrUpdate from './add-or-update.vue'
 
 const state: IHooksOptions = reactive({

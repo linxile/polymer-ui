@@ -141,10 +141,10 @@
 </template>
 
 <script setup lang="ts" name="SysMailAccountIndex">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./add-or-update.vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './add-or-update.vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const tableRef = ref();
 

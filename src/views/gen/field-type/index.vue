@@ -49,7 +49,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { IHooksOptions } from '@/hooks/interface'
+import { IHooksOptions } from '@/types/api/common'
 import { useCrud } from '@/hooks'
 import AddOrUpdate from './add-or-update.vue'
 

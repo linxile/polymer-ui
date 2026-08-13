@@ -90,12 +90,12 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import { IHooksOptions } from "@/hooks/interface";
-import FastUser from "@/components/fast-user/index.vue";
-import { useRoleUserSubmitApi } from "@/api/sys/role";
-import { ElMessage } from "element-plus/es";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import { IHooksOptions } from '@/types/api/common';
+import FastUser from '@/components/fast-user/index.vue';
+import { useRoleUserSubmitApi } from '@/api/sys/role';
+import { ElMessage } from 'element-plus/es';
 
 const props = defineProps({
   roleId: {

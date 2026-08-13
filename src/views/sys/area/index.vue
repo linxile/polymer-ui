@@ -27,8 +27,8 @@
 <script setup lang="tsx">
   import { ref, reactive } from 'vue'
   import AreaForm from './area-form.vue'
-  import { IHooksOptions } from '@/hooks/interface'
-  import {useCrud} from "@/hooks"
+  import { IHooksOptions } from '@/types/api/common'
+  import {useCrud} from '@/hooks'
 
 
   const state: IHooksOptions = reactive({

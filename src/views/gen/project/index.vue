@@ -51,7 +51,7 @@ import { useCrud } from '@/hooks'
 import { reactive, ref } from 'vue'
 import AddOrUpdate from './add-or-update.vue'
 import Download from './download.vue'
-import { IHooksOptions } from '@/hooks/interface'
+import { IHooksOptions } from '@/types/api/common'
 
 const state: IHooksOptions = reactive({
 	dataListUrl: '/gen/project/page',

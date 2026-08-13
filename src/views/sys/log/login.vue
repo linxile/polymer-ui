@@ -97,9 +97,9 @@
 </template>
 
 <script setup lang="ts" name="SysLogLogin">
-import { useCrud } from "@/hooks";
-import { reactive } from "vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive } from 'vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const state: IHooksOptions = reactive({
   dataListUrl: "/sys/log/login/page",

@@ -30,9 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from "vue";
-import { useCrud } from "@/hooks";
-import { IHooksOptions } from "@/hooks/interface";
+import { reactive } from 'vue';
+import { useCrud } from '@/hooks';
+import { IHooksOptions } from '@/types/api/common';
 
 const props = defineProps({
   dictTypeId: {

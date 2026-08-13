@@ -48,10 +48,10 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./data-add-or-update.vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './data-add-or-update.vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const props = defineProps({
   dictTypeId: {

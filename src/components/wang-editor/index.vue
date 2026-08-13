@@ -20,9 +20,9 @@ import '@wangeditor/editor/dist/css/style.css'
 import { onBeforeUnmount, shallowRef, watch } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import { IDomEditor, IEditorConfig } from '@wangeditor/editor'
-import FileUrlUtils from "@/utils/fileUrlUtils";
-import {ElMessage} from "element-plus";
-import { useFileUpload } from "@/hooks/useFileUpload";
+import FileUrlUtils from '@/utils/fileUrlUtils';
+import {ElMessage} from 'element-plus';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 const props = defineProps({
   modelValue: {

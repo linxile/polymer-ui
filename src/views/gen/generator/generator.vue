@@ -102,8 +102,8 @@ import { ElMessage } from 'element-plus/es'
 import { useBaseClassListApi } from '@/api/gen/baseClass'
 import { useGeneratorApi } from '@/api/gen/generator'
 import { useTableApi, useTableSubmitApi } from '@/api/gen/table'
-import {IHooksOptions} from "@/hooks/interface";
-import {useCrud} from "@/hooks";
+import {IHooksOptions} from '@/types/api/common';
+import {useCrud} from '@/hooks';
 
 const state: IHooksOptions = reactive({
   exportUrl: '/gen/generator/download',

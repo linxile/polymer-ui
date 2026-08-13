@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, markRaw, nextTick, onBeforeUnmount, onMounted, ref, watch} from "vue";
+import {computed, markRaw, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
 import {
   ArrowDown,
   ArrowUp,
@@ -83,7 +83,7 @@ import {
   Search,
   OfficeBuilding,
   Refresh
-} from "@element-plus/icons-vue";
+} from '@element-plus/icons-vue';
 
 const props = defineProps({
   // 树形数据

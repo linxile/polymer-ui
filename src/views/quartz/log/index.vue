@@ -107,10 +107,10 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import Detail from "./detail.vue";
-import { IHooksOptions } from "@/hooks/interface";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import Detail from './detail.vue';
+import { IHooksOptions } from '@/types/api/common';
 
 const state: IHooksOptions = reactive({
   dataListUrl: "/schedule/log/page",

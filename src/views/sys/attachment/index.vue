@@ -115,15 +115,15 @@
 </template>
 
 <script setup lang="ts" name="SysAttachmentIndex">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import { convertSizeFormat } from "@/utils/tool";
-import { IHooksOptions } from "@/hooks/interface";
-import { ElMessage } from "element-plus";
-import type { UploadProps } from "element-plus";
-import { useAttachmentSubmitApi } from "@/api/sys/attachment";
-import type {AttachmentUploadResult} from "@/types/api/common"
-import Upload from "@/components/upload/index.vue";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import { convertSizeFormat } from '@/utils/tool';
+import { IHooksOptions } from '@/types/api/common';
+import { ElMessage } from 'element-plus';
+import type { UploadProps } from 'element-plus';
+import { useAttachmentSubmitApi } from '@/api/sys/attachment';
+import type {AttachmentUploadResult} from '@/types/api/common'
+import Upload from '@/components/upload/index.vue';
 
 const tableRef = ref();
 

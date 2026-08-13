@@ -66,7 +66,7 @@
 	import { useCrud } from '@/hooks'
 	import { reactive, ref, nextTick } from 'vue'
 	import AddOrUpdate from './add-or-update.vue'
-	import { IHooksOptions } from '@/hooks/interface'
+	import { IHooksOptions } from '@/types/api/common'
 	import { ArrowDown, ArrowUp } from '@element-plus/icons-vue'
 
 	const state: IHooksOptions = reactive({

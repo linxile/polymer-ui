@@ -161,13 +161,13 @@
 </template>
 
 <script setup lang="ts" name="QuartzScheduleIndex">
-import { useCrud } from "@/hooks";
-import { reactive, ref } from "vue";
-import AddOrUpdate from "./add-or-update.vue";
-import Log from "../log/index.vue";
-import { IHooksOptions } from "@/hooks/interface";
-import { useScheduleStatusApi, useScheduleRunApi } from "@/api/quartz/schedule";
-import { ElMessage, ElMessageBox } from "element-plus/es";
+import { useCrud } from '@/hooks';
+import { reactive, ref } from 'vue';
+import AddOrUpdate from './add-or-update.vue';
+import Log from '../log/index.vue';
+import { IHooksOptions } from '@/types/api/common';
+import { useScheduleStatusApi, useScheduleRunApi } from '@/api/quartz/schedule';
+import { ElMessage, ElMessageBox } from 'element-plus/es';
 
 const tableRef = ref();
 

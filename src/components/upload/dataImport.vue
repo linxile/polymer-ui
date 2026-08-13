@@ -187,16 +187,16 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from "@/hooks";
+import { useCrud } from '@/hooks';
 import {ref, computed, reactive} from 'vue'
 import { ElMessage, UploadRequestOptions } from 'element-plus'
 import { Loading, CircleCheckFilled } from '@element-plus/icons-vue'
 import { useFileUpload } from '@/hooks/useFileUpload'
-import type {DataImportResult} from "@/types/api/common"
+import type {DataImportResult} from '@/types/api/common'
 import request from '@/utils/request'
-import {IHooksOptions} from "@/hooks/interface";
+import {IHooksOptions} from '@/types/api/common';
 import { useImportExportRecordListApi } from '@/api/sys/importExportRecord'
-import type {ApiResponse} from "@/types/api/common"
+import type {ApiResponse} from '@/types/api/common'
 
 // ==================== 类型定义 ====================
 
