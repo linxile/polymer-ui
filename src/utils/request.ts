@@ -16,6 +16,17 @@ import { refreshWebSocketToken } from '@/utils/websocket'
 /** 加密请求头 key */
 const encryptHeader = 'encrypt-key'
 
+// ==================== axios 类型扩展 ====================
+// 拦截器已把 response 处理成 res.data，这里让 service.get<T>() 直接返回 T
+declare module 'axios' {
+	export interface AxiosInstance {
+		get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+		post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+		put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+		delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+	}
+}
+
 // axios 实例
 const service = axios.create({
 	baseURL: import.meta.env.VITE_API_URL,
