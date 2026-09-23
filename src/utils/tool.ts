@@ -1,34 +1,51 @@
 import constant from '@/utils/constant'
 import { useAppStore } from '@/store/modules/app'
 import { AES, lib, enc, mode, pad } from 'crypto-js'
+import type { SysDict, SysDictDataItem } from '@/types/api/sys/dict-type'
 
-// 把路径转换成驼峰命名
-export const pathToCamel = (path: string): string => {
-	return path.replace(/\/(\w)/g, (all, letter) => letter.toUpperCase())
+/**
+ * 把路径转换成驼峰命名
+ * @param path 路径，如 '/sys/user'
+ * @returns 驼峰命名，如 'SysUser'
+ */
+export function pathToCamel(path: string): string {
+	return path.replace(/\/(\w)/g, (_all, letter) => letter.toUpperCase())
 }
 
-// 是否外链
-export const isExternalLink = (url: string): boolean => {
+/**
+ * 是否外链
+ * @param url 链接地址
+ */
+export function isExternalLink(url: string): boolean {
 	return /^(https?:|\/\/|http?:|\/\/|^{{\s?apiUrl\s?}})/.test(url)
 }
 
-// 替换外链参数
-export const replaceLinkParam = (url: string): string => {
+/**
+ * 替换外链参数
+ * @param url 链接地址，可能包含 {{apiUrl}} 占位符
+ */
+export function replaceLinkParam(url: string): string {
 	return url.replace('{{apiUrl}}', constant.apiUrl)
 }
 
-// 转换文件大小格式
-export const convertSizeFormat = (size: number): string => {
+/**
+ * 转换文件大小格式
+ * @param size 文件大小（字节）
+ */
+export function convertSizeFormat(size: number): string {
+	if (!size || size <= 0) {
+		return '0 Bytes'
+	}
 	const unit = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB']
-	let index = Math.floor(Math.log(size) / Math.log(1024))
-	let newSize = size / Math.pow(1024, index)
-
-	// 保留的小数位数
+	const index = Math.floor(Math.log(size) / Math.log(1024))
+	const newSize = size / Math.pow(1024, index)
 	return newSize.toFixed(2) + ' ' + unit[index]
 }
 
-// 获取svg图标(id)列表
-export const getIconList = (): string[] => {
+/**
+ * 获取 svg 图标（id）列表
+ */
+export function getIconList(): string[] {
 	const rs: string[] = []
 	const list = document.querySelectorAll('svg symbol[id^="icon-"]')
 	for (let i = 0; i < list.length; i++) {
@@ -37,56 +54,60 @@ export const getIconList = (): string[] => {
 	return rs
 }
 
-// 获取字典Label
-export const getDictLabel = (dictList: any[], dictType: string, dictValue: string) => {
-	const type = dictList.find((element: any) => element.dictType === dictType)
+/**
+ * 获取字典 Label
+ * @param dictList 字典列表
+ * @param dictType 字典类型
+ * @param dictValue 字典值
+ */
+export function getDictLabel(dictList: SysDict[], dictType: string, dictValue: string): string {
+	const type = dictList.find(element => element.dictType === dictType)
 	if (type) {
-		const val = type.dataList.find((element: any) => element.dictValue === dictValue + '')
+		const val = type.dataList?.find(element => element.dictValue === dictValue + '')
 		if (val) {
-			return val.dictLabel
-		} else {
-			return dictValue
+			return val.dictLabel || dictValue
 		}
-	} else {
 		return dictValue
 	}
+	return dictValue
 }
 
-// 获取字典Label样式
-export const getDictLabelClass = (dictList: any[], dictType: string, dictValue: string): string => {
-	const type = dictList.find((element: any) => element.dictType === dictType)
+/**
+ * 获取字典 Label 样式
+ * @param dictList 字典列表
+ * @param dictType 字典类型
+ * @param dictValue 字典值
+ */
+export function getDictLabelClass(dictList: SysDict[], dictType: string, dictValue: string): string {
+	const type = dictList.find(element => element.dictType === dictType)
 	if (type) {
-		const val = type.dataList.find((element: any) => element.dictValue === dictValue + '')
+		const val = type.dataList?.find(element => element.dictValue === dictValue + '')
 		if (val) {
-			return val.labelClass
-		} else {
-			return ''
+			return val.labelClass || ''
 		}
-	} else {
 		return ''
 	}
+	return ''
 }
 
-export const getDictLabelList = (dictType: string, dictValue: string | number | boolean): string => {
+/**
+ * 获取字典 Label 列表（支持逗号分隔的多值）
+ * 返回 HTML 字符串，调用方需用 v-html 渲染
+ * @param dictType 字典类型
+ * @param dictValue 字典值，多个用逗号分隔
+ */
+export function getDictLabelList(dictType: string, dictValue: string | number | boolean): string {
 	// 处理空值情况（包括 null、undefined、空字符串）
 	if (dictValue == null || dictValue === '') {
-		return '';
-	}
-	/*if (Number.isInteger(dictValue)) {
-		dictValue = dictValue + ''
-	}
-
-	if (!dictValue) {
 		return ''
-	}*/
-	// 统一转换为字符串处理（支持 boolean 和 number 类型）
-	const strValue = String(dictValue);
+	}
 
+	const strValue = String(dictValue)
 	const appStore = useAppStore()
 
 	let result = ''
 	strValue.split(',').forEach(value => {
-		if (!value) return; // 跳过空值
+		if (!value) return
 		const classStyle = getDictLabelClass(appStore.dictList, dictType, value)
 		const label = getDictLabel(appStore.dictList, dictType, value)
 
@@ -100,45 +121,45 @@ export const getDictLabelList = (dictType: string, dictValue: string | number | 
 	return result
 }
 
-// 获取字典数据列表
-export function getDictDataList(dictList: any[], dictType: string) {
-	const type = dictList.find((element: any) => element.dictType === dictType)
-	if (type) {
-		return type.dataList
-	} else {
-		return []
-	}
+/**
+ * 获取字典数据列表
+ * @param dictList 字典列表
+ * @param dictType 字典类型
+ */
+export function getDictDataList(dictList: SysDict[], dictType: string): SysDictDataItem[] {
+	const type = dictList.find(element => element.dictType === dictType)
+	return type?.dataList ?? []
 }
 
+// ==================== AES 加解密 ====================
 
-// 密钥
+/** 加密密钥（32 位） */
 const ENCRYPT_KEY = 'polymerlowcode16'
 
-export const decrypt = (ciphertext: string): string => {
-	// 将密文转换为CipherParams对象
+/**
+ * AES 解密
+ * @param ciphertext Base64 密文
+ */
+export function decrypt(ciphertext: string): string {
 	const cipherParams = lib.CipherParams.create({
 		ciphertext: enc.Base64.parse(ciphertext)
 	})
-
-	// 使用密钥解密CipherParams对象
 	const decrypted = AES.decrypt(cipherParams, enc.Utf8.parse(ENCRYPT_KEY), {
 		mode: mode.ECB,
 		padding: pad.Pkcs7
 	})
-
-	// 获取明文
 	return decrypted.toString(enc.Utf8)
 }
 
-export const encrypt = (plaintext: string): string => {
-	// 将明文转换为要加密的格式
+/**
+ * AES 加密
+ * @param plaintext 明文
+ */
+export function encrypt(plaintext: string): string {
 	const message = enc.Utf8.parse(plaintext)
-
-	// 使用密钥加密明文
 	const encrypted = AES.encrypt(message, enc.Utf8.parse(ENCRYPT_KEY), {
 		mode: mode.ECB,
 		padding: pad.Pkcs7
 	})
-
 	return encrypted.toString()
 }

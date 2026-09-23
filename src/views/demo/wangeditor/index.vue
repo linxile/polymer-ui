@@ -11,5 +11,4 @@ import { ref } from 'vue'
 
 const editorKey = ref(0) // 用于强制重新创建编辑器
 const editorValue = ref('<p>hjzt</p>')
-// const editorValue2 = ref('<p>hjzt</p>')
 </script>

@@ -1,55 +1,64 @@
 <template>
-	<el-dialog v-model="visible" :title="!dataForm.id ? '新增' : '修改'" :width="600" :close-on-click-modal="false" draggable>
-		<el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="80px" @keyup.enter="submitHandle()">
-			<el-form-item prop="dictValue" label="字典值">
-				<el-input v-model="dataForm.dictValue" placeholder="字典值"></el-input>
-			</el-form-item>
-			<el-form-item prop="dictLabel" label="字典标签">
-				<el-input v-model="dataForm.dictLabel" placeholder="字典标签"></el-input>
-			</el-form-item>
-			<el-form-item prop="labelClass" label="标签样式">
-				<el-select v-model="dataForm.labelClass" style="width: 100%" clearable>
-					<el-option
-						v-for="item in tagOptions"
-						:key="item.value"
-						:label="item.label"
-						:value="item.value">
-
+  <el-dialog v-model="dialogVisible" :title="title" :width="600" :close-on-click-modal="false" draggable @closed="handleClosed">
+    <el-form ref="dictDataRef" :model="form" :rules="rules" label-width="80px" @keyup.enter="submitForm()">
+      <el-form-item prop="dictValue" label="字典值">
+        <el-input v-model="form.dictValue" placeholder="字典值"></el-input>
+      </el-form-item>
+      <el-form-item prop="dictLabel" label="字典标签">
+        <el-input v-model="form.dictLabel" placeholder="字典标签"></el-input>
+      </el-form-item>
+      <el-form-item prop="labelClass" label="标签样式">
+        <el-select v-model="form.labelClass" style="width: 100%" clearable>
+          <el-option
+              v-for="item in tagOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
             <el-tag style="width: 100%" :type="item.value || 'info'">{{ item.label }}</el-tag>
-					</el-option>
-				</el-select>
-			</el-form-item>
-			<el-form-item prop="sort" label="排序">
-				<el-input-number v-model="dataForm.sort" controls-position="right" :min="0" aria-label="排序"></el-input-number>
-			</el-form-item>
-			<el-form-item prop="remark" label="备注">
-				<el-input v-model="dataForm.remark" placeholder="备注"></el-input>
-			</el-form-item>
-		</el-form>
-		<template #footer>
-			<el-button @click="visible = false">取消</el-button>
-			<el-button type="primary" @click="submitHandle()">确定</el-button>
-		</template>
-	</el-dialog>
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item prop="sort" label="排序">
+        <el-input-number v-model="form.sort" controls-position="right" :min="0" aria-label="排序"></el-input-number>
+      </el-form-item>
+      <el-form-item prop="remark" label="备注">
+        <el-input v-model="form.remark" placeholder="备注"></el-input>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="submitForm()">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus/es'
-import { useDictDataApi, useDictDataSubmitApi } from '@/api/sys/dict'
+import { getDictDataById, submitDictData } from '@/api/sys/dict-data'
+import { SysDictData } from '@/types/api/sys/dict-data'
 
-const emit = defineEmits(['refreshDataList'])
+const props = defineProps({
+  dictTypeId: {
+    type: Number,
+    required: true
+  }
+})
 
-const visible = ref(false)
-const dataFormRef = ref()
-const dataForm = reactive({
-	id: '',
-	dictTypeId: 0,
-	dictLabel: '',
-	dictValue: '',
-	labelClass: '',
-	sort: 0,
-	remark: ''
+const emit = defineEmits<{ (e: 'success'): void }>()
+const dictDataRef = ref()
+const dialogVisible = ref<boolean>(false)
+const title = ref<string>("")
+const isEdit = ref<boolean>(false)
+
+const form = ref<SysDictData>({
+  id: undefined,
+  dictTypeId: props.dictTypeId,
+  dictLabel: '',
+  dictValue: '',
+  labelClass: '',
+  sort: 0,
+  remark: ''
 })
 
 const tagOptions = [
@@ -60,54 +69,77 @@ const tagOptions = [
   { value: 'danger', label: 'danger' }
 ] as const
 
-const dataRules = ref({
-	dictLabel: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
-	dictValue: [{ required: true, message: '必填项不能为空', trigger: 'blur' }]
-})
-
-const init = (id?: number) => {
-	visible.value = true
-	dataForm.id = ''
-
-	// 重置表单数据
-	if (dataFormRef.value) {
-		dataFormRef.value.resetFields()
-	}
-
-	// id 存在则为修改
-	if (id) {
-		getDictData(id)
-	}
+const rules = {
+  dictLabel: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
+  dictValue: [{ required: true, message: '必填项不能为空', trigger: 'blur' }]
 }
 
-const getDictData = (id: number) => {
-	useDictDataApi(id).then(res => {
-		Object.assign(dataForm, res.data)
-	})
+/** 打开弹窗（新增） */
+function open() {
+  reset()
+  isEdit.value = false
+  title.value = "添加字典数据"
+  dialogVisible.value = true
 }
 
-// 表单提交
-const submitHandle = () => {
-	dataFormRef.value.validate((valid: boolean) => {
-		if (!valid) {
-			return false
-		}
-
-		useDictDataSubmitApi(dataForm).then(() => {
-			ElMessage.success({
-				message: '操作成功',
-				duration: 500,
-				onClose: () => {
-					visible.value = false
-					emit('refreshDataList')
-				}
-			})
-		})
-	})
+/** 打开弹窗（修改） */
+function openWithData(id: number) {
+  reset()
+  isEdit.value = true
+  title.value = "修改字典数据"
+  getDictDataById(id).then(response => {
+    form.value = response.data!
+    dialogVisible.value = true
+  })
 }
 
+/** 关闭弹窗 */
+function cancel() {
+  dialogVisible.value = false
+}
+
+/** 弹窗关闭后重置表单 */
+function handleClosed() {
+  reset()
+}
+
+/** 对外暴露方法 */
 defineExpose({
-	init,
-	dataForm
+  open,
+  openWithData
 })
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    id: undefined,
+    dictTypeId: props.dictTypeId,
+    dictLabel: '',
+    dictValue: '',
+    labelClass: '',
+    sort: 0,
+    remark: ''
+  }
+
+  if (dictDataRef.value) {
+    dictDataRef.value.resetFields()
+  }
+}
+
+/** 提交按钮 */
+function submitForm() {
+  dictDataRef.value.validate((valid: boolean) => {
+    if (valid) {
+      // 确保带上 dictTypeId
+      form.value.dictTypeId = props.dictTypeId
+
+      const msg = isEdit.value ? "修改成功" : "新增成功"
+      submitDictData(form.value).then(() => {
+        ElMessage.success(msg)
+        dialogVisible.value = false
+        emit('success')
+      })
+    }
+  })
+}
 </script>

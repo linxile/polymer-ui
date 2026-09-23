@@ -1,24 +1,27 @@
-import * as FileApi from '@/api/storage'
-import { UploadRequestOptions } from 'element-plus/es/components/upload/src/upload'
+import * as FileApi from '@/api/storage/file'
+import type { UploadRequestOptions } from 'element-plus/es/components/upload/src/upload'
 import axios from 'axios'
 import request from '@/utils/request'
-import type {ApiResponse, AttachmentUploadResult, DataImportResult} from '@/types/api/common'
+import type { DataImportResult } from '@/types/api/common'
+import type { SysFileUpload } from '@/types/api/storage/file'
 
 /**
  * 数据文件导入参数接口
  */
-interface DataImportParams<T = any> {
-    importUrl: string                                              // 导入接口地址
-    data?: Record<string, any>                                    // 额外的业务参数
+interface DataImportParams {
+    /** 导入接口地址 */
+    importUrl: string
+    /** 额外的业务参数 */
+    data?: Record<string, any>
 }
 
 /**
  * 上传类型
  */
 enum UPLOAD_TYPE {
-    // 客户端直接上传（只支持S3服务）
+    /** 客户端直接上传（只支持 S3 服务） */
     CLIENT = 'client',
-    // 客户端发送到后端上传
+    /** 客户端发送到后端上传 */
     SERVER = 'server'
 }
 
@@ -26,24 +29,21 @@ enum UPLOAD_TYPE {
  * 文件上传 Composable
  * 提供附件上传和数据文件导入两种功能
  */
-export const useFileUpload = () => {
+export function useFileUpload() {
     const isClientUpload = UPLOAD_TYPE.CLIENT === import.meta.env.VITE_UPLOAD_TYPE
 
     /**
      * 服务端上传（附件）
      */
-    const handleServerUpload = async (file: File): Promise<AttachmentUploadResult> => {
+    async function handleServerUpload(file: File): Promise<SysFileUpload> {
         try {
-            const response = await FileApi.updateFile({ file })
+            const response = await FileApi.updateFile(file)
 
-            // 修复类型转换问题 - 先转换为 unknown 再转换为 ApiResponse
-            const res = (response as unknown) as ApiResponse<AttachmentUploadResult>
-
-            if (res.code === 0) {
-                return res.data
-            } else {
-                throw new Error(res.msg || '文件上传失败')
+            // response 类型已是 Result<SysFileUpload>
+            if (response.code === 0 && response.data) {
+                return response.data
             }
+            throw new Error(response.msg || '文件上传失败')
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : '文件上传失败')
         }
@@ -52,32 +52,34 @@ export const useFileUpload = () => {
     /**
      * 客户端直传（附件）
      */
-    const handleClientUpload = async (file: File): Promise<AttachmentUploadResult> => {
+    async function handleClientUpload(file: File): Promise<SysFileUpload> {
         try {
             const presignedInfo = await FileApi.getFilePresignedUploadUrl(file.name)
 
-            // 修复类型转换问题 - 先转换为 unknown 再转换为 ApiResponse
-            const res = (presignedInfo as unknown) as ApiResponse<{
-                platform: string
-                presignedUrl: string
-                path: string
-            }>
+            const data = presignedInfo.data
+            if (!data) {
+                throw new Error('获取预签名失败!')
+            }
 
-            if (res.data.platform === 'LOCAL') {
+            if (data.platform === 'LOCAL') {
                 // 回退到后端上传
                 return await handleServerUpload(file)
             }
 
-            // 使用预签名URL直传
-            await axios.put(res.data.presignedUrl, file, {
+            if(!data.presignedUrl){
+                throw new Error('获取预签名地址失败!')
+            }
+
+            // 使用预签名 URL 直传
+            await axios.put(data.presignedUrl, file, {
                 headers: { 'Content-Type': file.type }
             })
 
             return {
                 name: file.name,
-                url: res.data.path,
+                url: data.path || '',
                 size: file.size,
-                platform: res.data.platform
+                platform: data.platform || ''
             }
         } catch (error) {
             throw new Error(error instanceof Error ? error.message : '文件上传失败')
@@ -87,28 +89,30 @@ export const useFileUpload = () => {
     /**
      * 上传附件 - 直接接收 File 对象
      */
-    const uploadAttachmentSimplify = async (file: File): Promise<AttachmentUploadResult> => {
+    async function uploadAttachmentSimplify(file: File): Promise<SysFileUpload> {
         if (isClientUpload) {
             return handleClientUpload(file)
-        } else {
-            return handleServerUpload(file)
         }
+        return handleServerUpload(file)
     }
 
     /**
      * 上传附件
-     * 返回类型：AttachmentUploadResult
+     * @param options el-upload 的请求选项
      */
-    const uploadAttachment = async (options: UploadRequestOptions): Promise<AttachmentUploadResult> => {
+    async function uploadAttachment(options: UploadRequestOptions): Promise<SysFileUpload> {
         return uploadAttachmentSimplify(options.file)
     }
 
     /**
      * 导入数据文件
-     * 返回类型：DataImportResult
-     * 使用统一的 request 实例发送请求
+     * @param options el-upload 的请求选项
+     * @param params 导入参数（接口地址 + 业务参数）
      */
-    const uploadDataImport = async (options: UploadRequestOptions, params: DataImportParams): Promise<DataImportResult> => {
+    async function uploadDataImport(
+        options: UploadRequestOptions,
+        params: DataImportParams
+    ): Promise<DataImportResult> {
         if (!params.importUrl) {
             throw new Error('导入接口地址不能为空')
         }
@@ -152,8 +156,8 @@ export const useFileUpload = () => {
     }
 
     return {
-        uploadAttachment,         // 附件上传
-        uploadAttachmentSimplify, // 附件上传简化
-        uploadDataImport          // 数据文件导入
+        uploadAttachment,          // 附件上传
+        uploadAttachmentSimplify,  // 附件上传简化
+        uploadDataImport           // 数据文件导入
     }
 }

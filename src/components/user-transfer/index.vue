@@ -4,19 +4,23 @@
         v-model="dialogVisible"
         :title="title"
         width="940px"
-        :close-on-click-modal="false">
+        :close-on-click-modal="false"
+    >
       <div class="user-transfer-dialog">
         <!-- 左侧组织部门树 -->
         <div class="tree-container">
-          <tree-panel title="组织机构"
-                      :tree-data="deptOptions"
-                      search-placeholder="请输入部门名称"
-                      storage-key="dept-sidebar-width"
-                      :defaultExpandAll="true"
-                      @node-click="handleDeptClick"
-                      @refresh="getDeptTree"
-                      :maxWidth="222"
-                      ref="deptTreeRef" style="height: 100%; flex: 1;"/>
+          <tree-panel
+              ref="deptTreeRef"
+              title="组织机构"
+              :tree-data="deptOptions"
+              search-placeholder="请输入部门名称"
+              storage-key="dept-sidebar-width"
+              :default-expand-all="true"
+              :max-width="222"
+              style="height: 100%; flex: 1"
+              @node-click="handleDeptClick"
+              @refresh="getDeptTree"
+          />
         </div>
 
         <!-- 右侧人员穿梭框 -->
@@ -42,67 +46,55 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, watch, onMounted, PropType } from 'vue'
-import { ElTree, ElMessage } from 'element-plus'
+<script setup lang="ts" name="UserTransfer">
+import { onMounted, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useDeptListApi } from '@/api/sys/dept'
 import { useListByDeptIdApi } from '@/api/sys/user'
-import TreePanel from '@/components/tree-panel/index.vue';
-import type {TreeSelect} from '@/types/api/common';
+import TreePanel from '@/components/tree-panel/index.vue'
+import type { TreeNode } from '@/types/api/common'
+import {SysUser} from "@/types/api/sys/user";
 
-// 用户接口定义
-interface User {
-  id: number
-  username: string
+interface IProps {
+  /** 对话框标题 */
+  title?: string
+  /** 是否多选模式 */
+  multiple?: boolean
+  /** 默认选中的用户ID */
+  defaultValue?: number | number[] | null
 }
 
-// 组件属性定义
-const props = defineProps({
-  // 对话框标题
-  title: {
-    type: String,
-    default: '选择负责人'
-  },
-  // 是否多选模式
-  multiple: {
-    type: Boolean,
-    default: false
-  },
-  // 默认选中的用户ID
-  defaultValue: {
-    type: [Number, Array] as PropType<number | number[]>,
-    default: null
-  }
+const props = withDefaults(defineProps<IProps>(), {
+  title: '选择负责人',
+  multiple: false,
+  defaultValue: null
 })
 
-// 组件事件定义
-const emit = defineEmits(['confirm'])
+const emit = defineEmits<{
+  (e: 'confirm', value: SysUser | SysUser[] | null): void
+}>()
 
 // ============== 状态变量定义 ==============
-const dialogVisible = ref(false)          // 对话框显示状态
-const deptOptions = ref<TreeSelect[] | undefined>(undefined) // 组织部门树数据
-const deptTreeRef = ref<InstanceType<typeof ElTree>>() // 树组件引用
-const currentDeptId = ref<number>(0)       // 当前选中的部门ID
-const leftUsers = ref<User[]>([])         // 左侧待选人员列表
-const selectedUserIds = ref<number[]>([]) // 已选择的用户ID列表
+const dialogVisible = ref<boolean>(false)
+const deptOptions = ref<TreeNode[]>([])
+const deptTreeRef = ref<InstanceType<typeof TreePanel>>()
+const currentDeptId = ref<number>(0)
+const leftUsers = ref<SysUser[]>([])
+const selectedUserIds = ref<number[]>([])
 
 // ============== 初始化逻辑 ==============
 onMounted(async () => {
-  // 组件挂载时加载部门树
   await getDeptTree()
 })
 
 // ============== 方法定义 ==============
 
-/**
- * 打开对话框
- * @param defaultValue - 默认选中的用户ID（可选）
- */
-const open = (defaultValue?: number | number[]) => {
+/** 打开对话框 */
+function open(defaultValue?: number | number[]) {
   dialogVisible.value = true
   selectedUserIds.value = []
 
-  // 设置默认值 - 使用传入的值或props.defaultValue
+  // 设置默认值 - 使用传入的值或 props.defaultValue
   const initValue = defaultValue !== undefined ? defaultValue : props.defaultValue
 
   if (initValue !== null && initValue !== undefined) {
@@ -118,10 +110,8 @@ const open = (defaultValue?: number | number[]) => {
   }
 }
 
-/**
- * 加载组织部门树
- */
-const getDeptTree = async () => {
+/** 加载组织部门树 */
+async function getDeptTree() {
   try {
     const res = await useDeptListApi()
     deptOptions.value = res.data || []
@@ -131,14 +121,11 @@ const getDeptTree = async () => {
   }
 }
 
-/**
- * 加载指定部门下的用户
- * @param deptId - 部门ID
- */
-const loadUsersByDept = async (deptId: number) => {
+/** 加载指定部门下的用户 */
+async function loadUsersByDept(deptId: number) {
   try {
     const res = await useListByDeptIdApi(deptId)
-    leftUsers.value = res.data || [] // 确保总是数组
+    leftUsers.value = res.data || []
   } catch (error) {
     console.error(`加载部门${deptId}下的用户失败:`, error)
     ElMessage.error('加载用户列表失败')
@@ -146,54 +133,38 @@ const loadUsersByDept = async (deptId: number) => {
   }
 }
 
-/**
- * 安全字符串转换（用于搜索）
- * @param str - 输入字符串
- * @returns 小写字符串或空字符串
- */
-const safeToLower = (str: string | null | undefined): string => {
+/** 安全字符串转换（用于搜索） */
+function safeToLower(str: string | null | undefined): string {
   return str ? str.toLowerCase() : ''
 }
 
 // ============== 事件处理函数 ==============
 
-/**
- * 树节点点击事件
- * @param node - 点击的节点数据
- */
-const handleDeptClick = (node: any) => {
-  currentDeptId.value = node.id
-  loadUsersByDept(node.id)
+/** 树节点点击事件 */
+function handleDeptClick(node: TreeNode) {
+  currentDeptId.value = Number(node.id)
+  loadUsersByDept(currentDeptId.value)
 }
 
-/**
- * 穿梭框筛选方法
- * @param query - 搜索关键字
- * @param item - 用户项
- * @returns 是否符合条件
- */
-const filterMethod = (query: string, item: User) => {
+/** 穿梭框筛选方法 */
+function filterMethod(query: string, item: SysUser): boolean {
   return safeToLower(item.username).includes(safeToLower(query))
 }
 
-/**
- * 处理穿梭框变化事件
- * @param newSelected - 新的选中用户ID列表
- * @param direction - 移动方向（'left' 或 'right'）
- * @param movedKeys - 被移动的键列表
- */
-const handleTransferChange = (newSelected: number[], direction: 'left' | 'right', movedKeys: number[]) => {
+/** 处理穿梭框变化事件 */
+function handleTransferChange(
+    newSelected: number[],
+    direction: 'left' | 'right',
+    movedKeys: number[]
+) {
   // 单选模式下特殊处理：当从左侧添加新用户时，替换现有选择
   if (!props.multiple && direction === 'right' && movedKeys.length > 0) {
-    // 只保留最新添加的用户
     selectedUserIds.value = [movedKeys[movedKeys.length - 1]]
   }
 }
 
-/**
- * 确认选择
- */
-const confirmSelection = () => {
+/** 确认选择 */
+function confirmSelection() {
   // 单选模式校验
   if (!props.multiple && selectedUserIds.value.length > 1) {
     ElMessage.warning('单选模式下只能选择一个用户')
@@ -217,18 +188,14 @@ const confirmSelection = () => {
 
 // ============== 监听器 ==============
 
-/**
- * 监听选中用户ID的变化（用于单选模式处理）
- */
+/** 监听选中用户ID的变化（用于单选模式处理） */
 watch(selectedUserIds, (newVal) => {
-  // 单选模式下确保最多只能选择一个用户
   if (!props.multiple && newVal.length > 1) {
-    // 保留最后一个选择的用户
     selectedUserIds.value = [newVal[newVal.length - 1]]
   }
 })
 
-// 暴露open方法供外部使用
+// 暴露 open 方法供外部使用
 defineExpose({ open })
 </script>
 

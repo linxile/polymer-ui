@@ -1,198 +1,218 @@
 <template>
-	<div class="navbar-settings">
-		<svg-icon icon="icon-ellipsis-v" @click="visible = true"></svg-icon>
-		<el-drawer v-model="visible" :title="$t('settings.title')" :destroy-on-close="true" :size="280">
-			<el-scrollbar class="settings-container">
-				<el-space direction="vertical" alignment="flex-start">
-					<el-space>
-						<el-tooltip key="dark" effect="dark" :content="$t('settings.sidebarDark')" placement="top">
-							<div
-								class="settings-box-item item-left-dark"
-								:class="theme.sidebarStyle === 'dark' ? 'active' : ''"
-								@click="handleSidebarTheme('dark')"
-							></div>
-						</el-tooltip>
-						<el-tooltip key="light" effect="dark" :content="$t('settings.sidebarLight')" placement="top">
-							<div
-								class="settings-box-item item-left-light"
-								:class="theme.sidebarStyle === 'light' ? 'active' : ''"
-								@click="handleSidebarTheme('light')"
-							></div>
-						</el-tooltip>
-					</el-space>
-					<el-space>
-						<el-tooltip key="light" effect="dark" :content="$t('settings.navbarLight')" placement="top">
-							<div
-								class="settings-box-item item-top-light"
-								:class="theme.headerStyle === 'light' ? 'active' : ''"
-								@click="handleHeaderTheme('light')"
-							></div>
-						</el-tooltip>
-						<el-tooltip key="auto" effect="dark" :content="$t('settings.navbarTheme')" placement="top">
-							<div
-								class="settings-box-item item-top-theme"
-								:class="theme.headerStyle === 'theme' ? 'active' : ''"
-								@click="handleHeaderTheme('theme')"
-							></div>
-						</el-tooltip>
-					</el-space>
-					<el-space :size="2" wrap>
-						<div v-for="color in colors" :key="color">
+  <div class="navbar-settings">
+    <svg-icon icon="icon-ellipsis-v" @click="visible = true"></svg-icon>
+    <el-drawer v-model="visible" :title="$t('settings.title')" :destroy-on-close="true" :size="280">
+      <el-scrollbar class="settings-container">
+        <el-space direction="vertical" alignment="flex-start">
+          <el-space>
+            <el-tooltip key="dark" effect="dark" :content="$t('settings.sidebarDark')" placement="top">
+              <div
+                  class="settings-box-item item-left-dark"
+                  :class="theme.sidebarStyle === 'dark' ? 'active' : ''"
+                  @click="handleSidebarTheme('dark')"
+              ></div>
+            </el-tooltip>
+            <el-tooltip key="light" effect="dark" :content="$t('settings.sidebarLight')" placement="top">
+              <div
+                  class="settings-box-item item-left-light"
+                  :class="theme.sidebarStyle === 'light' ? 'active' : ''"
+                  @click="handleSidebarTheme('light')"
+              ></div>
+            </el-tooltip>
+          </el-space>
+          <el-space>
+            <el-tooltip key="light" effect="dark" :content="$t('settings.navbarLight')" placement="top">
+              <div
+                  class="settings-box-item item-top-light"
+                  :class="theme.headerStyle === 'light' ? 'active' : ''"
+                  @click="handleHeaderTheme('light')"
+              ></div>
+            </el-tooltip>
+            <el-tooltip key="auto" effect="dark" :content="$t('settings.navbarTheme')" placement="top">
+              <div
+                  class="settings-box-item item-top-theme"
+                  :class="theme.headerStyle === 'theme' ? 'active' : ''"
+                  @click="handleHeaderTheme('theme')"
+              ></div>
+            </el-tooltip>
+          </el-space>
+          <el-space :size="2" wrap>
+            <div v-for="color in colors" :key="color">
 							<span
-								class="theme-color"
-								:class="theme.primaryColor === color ? 'active' : ''"
-								:style="`background-color: ${color}`"
-								@click="handleThemeColor(color)"
-							></span>
-						</div>
-					</el-space>
-				</el-space>
+                  class="theme-color"
+                  :class="theme.primaryColor === color ? 'active' : ''"
+                  :style="`background-color: ${color}`"
+                  @click="handleThemeColor(color)"
+              ></span>
+            </div>
+          </el-space>
+        </el-space>
 
-				<el-divider content-position="left">{{ $t('settings.layout') }}</el-divider>
+        <el-divider content-position="left">{{ $t('settings.layout') }}</el-divider>
 
-				<!-- 布局切换 -->
-				<el-space>
-					<el-tooltip key="dark" effect="dark" placement="top" :content="$t('settings.vertical')">
-						<div
-							class="settings-box-item item-vertical"
-							:class="theme.layout === 'vertical' ? 'active' : ''"
-							@click="handleLayoutTheme('vertical')"
-						></div>
-					</el-tooltip>
-					<el-tooltip key="light" effect="dark" placement="top" :content="$t('settings.columns')">
-						<div class="settings-box-item item-columns" :class="theme.layout === 'columns' ? 'active' : ''" @click="handleLayoutTheme('columns')">
-							<div class="columns-tips-box"></div>
-							<div class="columns-sub-menu"></div>
-						</div>
-					</el-tooltip>
-					<el-tooltip key="light" effect="dark" placement="top" :content="$t('settings.transverse')">
-						<div
-							class="settings-box-item item-transverse"
-							:class="theme.layout === 'transverse' ? 'active' : ''"
-							@click="handleLayoutTheme('transverse')"
-						></div>
-					</el-tooltip>
-				</el-space>
+        <!-- 布局切换 -->
+        <el-space>
+          <el-tooltip key="dark" effect="dark" placement="top" :content="$t('settings.vertical')">
+            <div
+                class="settings-box-item item-vertical"
+                :class="theme.layout === 'vertical' ? 'active' : ''"
+                @click="handleLayoutTheme('vertical')"
+            ></div>
+          </el-tooltip>
+          <el-tooltip key="light" effect="dark" placement="top" :content="$t('settings.columns')">
+            <div
+                class="settings-box-item item-columns"
+                :class="theme.layout === 'columns' ? 'active' : ''"
+                @click="handleLayoutTheme('columns')"
+            >
+              <div class="columns-tips-box"></div>
+              <div class="columns-sub-menu"></div>
+            </div>
+          </el-tooltip>
+          <el-tooltip key="light" effect="dark" placement="top" :content="$t('settings.transverse')">
+            <div
+                class="settings-box-item item-transverse"
+                :class="theme.layout === 'transverse' ? 'active' : ''"
+                @click="handleLayoutTheme('transverse')"
+            ></div>
+          </el-tooltip>
+        </el-space>
 
-				<el-divider content-position="left">{{ $t('settings.interface') }}</el-divider>
+        <el-divider content-position="left">{{ $t('settings.interface') }}</el-divider>
 
-				<SwitchItem v-model="isDark" :title="$t('settings.dark')" />
-				<SwitchItem v-model="theme.uniqueOpened" :title="$t('settings.uniqueOpened')" @change="handleOtherTheme" />
-				<SwitchItem v-model="theme.isLogo" :title="$t('settings.logo')" @change="handleOtherTheme" />
-				<SwitchItem v-model="theme.isBreadcrumb" :title="$t('settings.breadcrumb')" @change="handleOtherTheme" />
-				<SwitchItem v-model="theme.isTabsView" :title="$t('settings.tabs')" @change="handleOtherTheme" />
-				<SwitchItem v-model="theme.isTabsCache" :title="$t('settings.tabsCache')" @change="handleOtherTheme" />
-				<SelectItem v-model="theme.tabsStyle" :title="$t('settings.tabsStyle')" :options="tabsStyle" @change="handleOtherTheme" />
+        <SwitchItem v-model="isDark" :title="$t('settings.dark')" />
+        <SwitchItem v-model="theme.uniqueOpened" :title="$t('settings.uniqueOpened')" @change="handleOtherTheme" />
+        <SwitchItem v-model="theme.isLogo" :title="$t('settings.logo')" @change="handleOtherTheme" />
+        <SwitchItem v-model="theme.isBreadcrumb" :title="$t('settings.breadcrumb')" @change="handleOtherTheme" />
+        <SwitchItem v-model="theme.isTabsView" :title="$t('settings.tabs')" @change="handleOtherTheme" />
+        <SwitchItem v-model="theme.isTabsCache" :title="$t('settings.tabsCache')" @change="handleOtherTheme" />
+        <SelectItem v-model="theme.tabsStyle" :title="$t('settings.tabsStyle')" :options="tabsStyle" @change="handleOtherTheme" />
 
-				<el-divider />
+        <el-divider />
 
-				<el-space direction="vertical">
-					<el-alert :title="$t('settings.tips')" type="warning" :closable="false"> </el-alert>
-					<div class="config-btn">
-						<el-button type="primary" size="default" :icon="CopyDocument" @click="handleCopyConfig">
-							{{ $t('settings.copyConfig') }}
-						</el-button>
-						<el-button type="info" size="default" :icon="RefreshRight" @click="handleResetConfig">
-							{{ $t('settings.reset') }}
-						</el-button>
-					</div>
-				</el-space>
-			</el-scrollbar>
-		</el-drawer>
-	</div>
+        <el-space direction="vertical">
+          <el-alert :title="$t('settings.tips')" type="warning" :closable="false"></el-alert>
+          <div class="config-btn">
+            <el-button type="primary" size="default" :icon="CopyDocument" @click="handleCopyConfig">
+              {{ $t('settings.copyConfig') }}
+            </el-button>
+            <el-button type="info" size="default" :icon="RefreshRight" @click="handleResetConfig">
+              {{ $t('settings.reset') }}
+            </el-button>
+          </div>
+        </el-space>
+      </el-scrollbar>
+    </el-drawer>
+  </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="NavbarSettings">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CopyDocument, RefreshRight } from '@element-plus/icons-vue'
 import { useClipboard, useDark } from '@vueuse/core'
+import { ElMessage } from 'element-plus'
 import SwitchItem from './components/SwitchItem.vue'
 import SelectItem from './components/SelectItem.vue'
-import { ElMessage } from 'element-plus'
 import { handleThemeStyle } from '@/utils/theme'
 import cache from '@/utils/cache'
 import emits from '@/utils/emits'
 import { useAppStore } from '@/store/modules/app'
+import type { ITheme } from '@/store/theme/interface'
+
+/** 布局类型 */
+type LayoutKey = 'vertical' | 'columns' | 'transverse'
+/** 侧边栏/顶栏样式 */
+type ThemeStyle = 'dark' | 'light' | 'theme'
+/** 下拉选项 */
+interface SelectOption {
+  label: string
+  value: string
+}
 
 const appStore = useAppStore()
-
 const { t } = useI18n()
 const { copy } = useClipboard()
 
-// 是否显示
-const visible = ref(false)
-emits.on('openThemeSettings', () => (visible.value = true))
+/** 是否显示设置抽屉 */
+const visible = ref<boolean>(false)
 
-const colors = [
-	'#409eff',
-	'#0BB2D4',
-	'#3E8EF7',
-	'#11C26D',
-	'#17B3A3',
-	'#667AFA',
-	'#997B71',
-	'#9463F7',
-	'#757575',
-	'#EB6709',
-	'#F74584',
-	'#FCB900',
-	'#FF4C52'
+// 监听打开设置抽屉事件
+emits.on('openThemeSettings', () => {
+  visible.value = true
+})
+
+/** 主题色列表 */
+const colors: string[] = [
+  '#409eff',
+  '#0BB2D4',
+  '#3E8EF7',
+  '#11C26D',
+  '#17B3A3',
+  '#667AFA',
+  '#997B71',
+  '#9463F7',
+  '#757575',
+  '#EB6709',
+  '#F74584',
+  '#FCB900',
+  '#FF4C52'
 ]
 
-const tabsStyle = [
-	{ label: t('settings.style1'), value: 'style-1' },
-	{ label: t('settings.style2'), value: 'style-2' }
+/** 页签风格选项 */
+const tabsStyle: SelectOption[] = [
+  { label: t('settings.style1'), value: 'style-1' },
+  { label: t('settings.style2'), value: 'style-2' }
 ]
 
-// 默认主题
-const theme = computed(() => appStore.theme)
+/** 当前主题 */
+const theme = computed<ITheme>(() => appStore.theme)
 
-// 处理布局切换
-const handleLayoutTheme = (layout: string) => {
-	theme.value.layout = layout
-	cache.setTheme(theme.value)
-}
-
-// 处理侧边栏主题
-const handleSidebarTheme = (style: string) => {
-	theme.value.sidebarStyle = style
-	cache.setTheme(theme.value)
-}
-
-// 处理顶栏主题
-const handleHeaderTheme = (style: string) => {
-	theme.value.headerStyle = style
-	cache.setTheme(theme.value)
-}
-
-// 处理暗黑模式
+/** 暗黑模式 */
 const isDark = useDark()
 
-// 处理其他主题
-const handleOtherTheme = () => {
-	cache.setTheme(theme.value)
+/** 处理布局切换 */
+function handleLayoutTheme(layout: LayoutKey) {
+  theme.value.layout = layout
+  cache.setTheme(theme.value)
 }
 
-// 处理主题色
-const handleThemeColor = (color: string) => {
-	theme.value.primaryColor = color
-	cache.setTheme(theme.value)
-
-	handleThemeStyle(theme.value)
+/** 处理侧边栏主题 */
+function handleSidebarTheme(style: ThemeStyle) {
+  theme.value.sidebarStyle = style
+  cache.setTheme(theme.value)
 }
 
-// 复制配置
-const handleCopyConfig = () => {
-	const config = JSON.stringify(theme.value, null, 2)
-	copy(config)
-	ElMessage.success(t('settings.copySuc'))
+/** 处理顶栏主题 */
+function handleHeaderTheme(style: ThemeStyle) {
+  theme.value.headerStyle = style
+  cache.setTheme(theme.value)
 }
 
-// 恢复默认
-const handleResetConfig = async () => {
-	cache.removeTheme()
-	window.location.reload()
+/** 处理其他主题（统一保存到缓存） */
+function handleOtherTheme() {
+  cache.setTheme(theme.value)
+}
+
+/** 处理主题色 */
+function handleThemeColor(color: string) {
+  theme.value.primaryColor = color
+  cache.setTheme(theme.value)
+
+  handleThemeStyle(theme.value)
+}
+
+/** 复制配置 */
+function handleCopyConfig() {
+  const config = JSON.stringify(theme.value, null, 2)
+  copy(config)
+  ElMessage.success(t('settings.copySuc'))
+}
+
+/** 恢复默认 */
+async function handleResetConfig() {
+  cache.removeTheme()
+  window.location.reload()
 }
 </script>
 

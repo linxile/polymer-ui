@@ -1,13 +1,18 @@
 <template>
-  <el-dialog v-model="visible" title="数据权限" :close-on-click-modal="false" :width="600" draggable>
-    <el-form ref="dataFormRef" :model="dataForm" label-width="120px" @keyup.enter="submitHandle()">
-      <el-form-item prop="name" label="名称">
-        <el-input v-model="dataForm.name" disabled></el-input>
+  <el-dialog v-model="dialogVisible" :title="title" :close-on-click-modal="false" :width="600" draggable @closed="handleClosed">
+    <el-form ref="roleRef" :model="form" label-width="120px" @keyup.enter="submitForm()">
+      <el-form-item label="角色名称">
+        <el-input v-model="form.name" disabled></el-input>
       </el-form-item>
-      <el-form-item prop="dataScope" label="数据范围">
-        <fast-select v-model="dataForm.dataScope" dict-type="role_data_scope" placeholder="数据范围" style="width: 100%"></fast-select>
+      <el-form-item label="数据范围" prop="dataScope">
+        <fast-select v-model="form.dataScope" dict-type="role_data_scope" placeholder="数据范围" style="width: 100%"></fast-select>
       </el-form-item>
-      <el-form-item v-show="dataForm.dataScope == 1" label="数据权限" prop="deptIdList" :rules="[{ required: true, message: '请选择数据权限', trigger: 'change' }]">
+      <el-form-item
+          v-show="form.dataScope == 4"
+          label="数据权限"
+          prop="deptIdList"
+          :rules="[{ required: true, message: '请选择数据权限', trigger: 'change' }]"
+      >
         <el-tree
             ref="deptListTree"
             :data="deptList"
@@ -16,133 +21,129 @@
             accordion
             show-checkbox
             @check="handleTreeCheck"
-            @check-change="handleCheckChange"
         >
         </el-tree>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="visible = false">取消</el-button>
-      <el-button type="primary" @click="submitHandle()">确定</el-button>
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="submitForm()">确定</el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, nextTick } from 'vue'
+import { ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus/es'
-import { useRoleApi, useRoleDataScopeSubmitApi } from '@/api/sys/role'
+import { getRoleById, useRoleDataScopeSubmitApi } from '@/api/sys/role'
 import { useDeptListApi } from '@/api/sys/dept'
+import { SysRole } from '@/types/api/sys/role'
 
-const visible = ref(false)
-const deptList = ref([])
+const emit = defineEmits<{ (e: 'success'): void }>()
+const roleRef = ref()
 const deptListTree = ref()
-const dataFormRef = ref()
+const deptList = ref<any[]>([])
+const dialogVisible = ref<boolean>(false)
+const title = ref<string>("数据权限")
 
-const dataForm = reactive({
-  id: '',
+const form = ref<SysRole>({
+  id: undefined,
   name: '',
-  deptIdList: [],
+  roleCode: '',
   dataScope: 0,
-  remark: ''
+  deptIdList: []
 })
 
-const init = (id?: number) => {
-  visible.value = true
-  dataForm.id = ''
-
-  // 重置表单数据
-  if (dataFormRef.value) {
-    dataFormRef.value.resetFields()
-  }
-  if (deptListTree.value) {
-    deptListTree.value.setCheckedKeys([])
-  }
-
-  // id 存在则为修改
-  if (id) {
-    getRole(id)
-  }
-
-  // 部门列表
+/** 打开弹窗 */
+function openWithData(id: number) {
+  reset()
   getDeptList()
-}
-
-// 获取部门列表
-const getDeptList = async () => {
-  const res = await useDeptListApi()
-  deptList.value = res.data
-}
-
-// 获取信息
-const getRole = (id: number) => {
-  useRoleApi(id).then(res => {
-    Object.assign(dataForm, res.data)
-
+  getRoleById(id).then(response => {
+    form.value = response.data!
+    dialogVisible.value = true
     nextTick(() => {
-      deptListTree.value.setCheckedKeys(dataForm.deptIdList)
-      // 同步更新表单数据并清除校验状态
-      if (dataForm.dataScope == 1) {
-        dataForm.deptIdList = deptListTree.value.getCheckedKeys()
+      if (form.value.deptIdList) {
+        deptListTree.value.setCheckedKeys(form.value.deptIdList)
+      }
+      if (form.value.dataScope == 4) {
+        form.value.deptIdList = deptListTree.value.getCheckedKeys()
         nextTick(() => {
-          dataFormRef.value.clearValidate('deptIdList')
+          roleRef.value.clearValidate('deptIdList')
         })
       }
     })
   })
 }
 
-// 树节点选中事件（解决校验问题）
-const handleTreeCheck = () => {
-  if (dataForm.dataScope == 1) {
-    // 同步更新 deptIdList
-    dataForm.deptIdList = deptListTree.value.getCheckedKeys()
-    // 清除校验状态
-    nextTick(() => {
-      dataFormRef.value.clearValidate('deptIdList')
-    })
-  }
-}
-
-// 监听节点选中状态变化（备选方案）
-const handleCheckChange = () => {
-  if (dataForm.dataScope == 1) {
-    dataForm.deptIdList = deptListTree.value.getCheckedKeys()
-  }
-}
-
-// 表单提交
-const submitHandle = () => {
-  // 先更新 deptIdList
-  dataForm.deptIdList = deptListTree.value.getCheckedKeys()
-
-  // 如果是数据范围1，需要校验 deptIdList 是否为空
-  if (dataForm.dataScope == 1) {
-    if (!dataForm.deptIdList || dataForm.deptIdList.length === 0) {
-      ElMessage.warning({
-        message: '请选择数据权限',
-        duration: 2000
-      })
-      // 触发表单校验显示红色提示
-      dataFormRef.value.validateField('deptIdList')
-      return
-    }
-    // 清除校验状态
-    dataFormRef.value.clearValidate('deptIdList')
-  }
-
-  useRoleDataScopeSubmitApi(dataForm).then(() => {
-    ElMessage.success({
-      message: '操作成功',
-      duration: 500,
-      onClose: () => {
-        visible.value = false
-      }
-    })
+/** 获取部门列表 */
+function getDeptList() {
+  useDeptListApi().then(response => {
+    deptList.value = response.data!
   })
 }
 
+/** 树节点选中事件（同步数据 + 清除校验） */
+function handleTreeCheck() {
+  if (form.value.dataScope == 4) {
+    form.value.deptIdList = deptListTree.value.getCheckedKeys()
+    nextTick(() => {
+      roleRef.value.clearValidate('deptIdList')
+    })
+  }
+}
+
+/** 关闭弹窗 */
+function cancel() {
+  dialogVisible.value = false
+}
+
+/** 弹窗关闭后重置表单 */
+function handleClosed() {
+  reset()
+}
+
+/** 对外暴露方法 */
 defineExpose({
-  init
+  openWithData
 })
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    id: undefined,
+    name: '',
+    roleCode: '',
+    dataScope: 0,
+    deptIdList: []
+  }
+
+  if (roleRef.value) {
+    roleRef.value.resetFields()
+  }
+  if (deptListTree.value) {
+    deptListTree.value.setCheckedKeys([])
+  }
+}
+
+/** 提交按钮 */
+function submitForm() {
+  // 先同步勾选的部门
+  form.value.deptIdList = deptListTree.value.getCheckedKeys()
+
+  // 自定义数据范围需要校验部门是否为空
+  if (form.value.dataScope == 4) {
+    if (!form.value.deptIdList || form.value.deptIdList.length === 0) {
+      ElMessage.warning('请选择数据权限')
+      roleRef.value.validateField('deptIdList')
+      return
+    }
+    roleRef.value.clearValidate('deptIdList')
+  }
+
+  useRoleDataScopeSubmitApi(form.value).then(() => {
+    ElMessage.success("操作成功")
+    dialogVisible.value = false
+    emit('success')
+  })
+}
 </script>

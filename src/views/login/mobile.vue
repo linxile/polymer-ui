@@ -1,24 +1,29 @@
 <template>
-	<el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" @keyup.enter="onLogin">
-		<el-form-item prop="mobile">
-			<el-input v-model="loginForm.mobile" :prefix-icon="User" :placeholder="$t('app.mobile')"></el-input>
-		</el-form-item>
-		<el-form-item prop="code" class="login-code">
-      <el-input class="my-input-group" v-model="loginForm.code" :placeholder="$t('app.captcha')" :prefix-icon="Key" >
+  <el-form ref="loginFormRef" :model="form" :rules="rules" @keyup.enter="onLogin">
+    <el-form-item prop="mobile">
+      <el-input v-model="form.mobile" :prefix-icon="User" :placeholder="$t('app.mobile')"></el-input>
+    </el-form-item>
+    <el-form-item prop="code" class="login-code">
+      <el-input
+          class="my-input-group"
+          v-model="form.code"
+          :placeholder="$t('app.captcha')"
+          :prefix-icon="Key"
+      >
         <template #append>
           <el-button v-if="!sms.disabled" @click="sendCode">发送验证码</el-button>
           <el-button v-else disabled>{{ sms.count }} 秒后重新发送</el-button>
         </template>
       </el-input>
-		</el-form-item>
-		<el-form-item class="login-button">
-			<el-button type="primary" @click="onLogin()">{{ $t('app.signIn') }}</el-button>
-		</el-form-item>
-	</el-form>
+    </el-form-item>
+    <el-form-item class="login-button">
+      <el-button type="primary" @click="onLogin">{{ $t('app.signIn') }}</el-button>
+    </el-form-item>
+  </el-form>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { User, Key } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/modules/user'
 import { useSendCodeApi } from '@/api/auth'
@@ -26,89 +31,92 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { mobileRegExp } from '@/utils/validate'
 import { ElMessage } from 'element-plus'
+import type { SysMobileLogin } from '@/types/api/auth'
 
 const userStore = useUserStore()
-// 发送短信验证码
-const sendCode = () => {
-	if (!mobileRegExp.test(loginForm.mobile)) {
-		ElMessage.error('请输入正确的手机号')
-		return
-	}
+const router = useRouter()
+const { t } = useI18n()
 
-	useSendCodeApi(loginForm.mobile).then(() => {
-		timerHandler()
-	})
+const loginFormRef = ref()
+
+const form = ref<SysMobileLogin>({
+  mobile: '',
+  code: ''
+})
+
+const rules = {
+  mobile: [{ required: true, message: t('required'), trigger: 'blur' }],
+  code: [{ required: true, message: t('required'), trigger: 'blur' }]
 }
 
 // 短信计时器
 const sms = reactive({
-	disabled: false,
-	total: 60,
-	count: 0
+  disabled: false,
+  total: 60,
+  count: 0
 })
 
-// 计时器处理器
-const timerHandler = () => {
-	sms.count = sms.total
-	sms.disabled = true
+/** 发送短信验证码 */
+function sendCode() {
+  if (!mobileRegExp.test(form.value.mobile || '')) {
+    ElMessage.error('请输入正确的手机号')
+    return
+  }
 
-	let timer = setInterval(() => {
-		if (sms.count > 1 && sms.count <= sms.total) {
-			sms.count--
-		} else {
-			sms.disabled = false
-			clearInterval(timer)
-		}
-	}, 1000)
+  useSendCodeApi(form.value.mobile!).then(() => {
+    timerHandler()
+  })
 }
 
-const router = useRouter()
-const { t } = useI18n()
-const loginFormRef = ref()
+/** 计时器处理器 */
+function timerHandler() {
+  sms.count = sms.total
+  sms.disabled = true
 
-const loginForm = reactive({
-	mobile: '',
-	code: ''
-})
+  const timer = setInterval(() => {
+    if (sms.count > 1 && sms.count <= sms.total) {
+      sms.count--
+    } else {
+      sms.disabled = false
+      clearInterval(timer)
+    }
+  }, 1000)
+}
 
-const loginRules = ref({
-	mobile: [{ required: true, message: t('required'), trigger: 'blur' }],
-	code: [{ required: true, message: t('required'), trigger: 'blur' }]
-})
+/** 登录 */
+function onLogin() {
+  loginFormRef.value.validate((valid: boolean) => {
+    if (!valid) {
+      return false
+    }
 
-const onLogin = () => {
-	loginFormRef.value.validate((valid: boolean) => {
-		if (!valid) {
-			return false
-		}
-
-		// 用户登录
-		userStore.mobileLoginAction(loginForm).then(() => {
-			router.push({ path: '/home' })
-		})
-	})
+    // 用户登录
+    userStore.mobileLoginAction(form.value).then(() => {
+      router.push({ path: '/home' })
+    })
+  })
 }
 </script>
 
 <style lang="scss" scoped>
 .login-code {
-	:deep(.el-input) {
-		width: 100%;
-	}
-	:deep(.el-button--default) {
-		width: 120px;
-		height: 40px;
-		margin: 5px 0 0 10px;
-	}
+  :deep(.el-input) {
+    width: 100%;
+  }
+  :deep(.el-button--default) {
+    width: 120px;
+    height: 40px;
+    margin: 5px 0 0 10px;
+  }
 }
 .login-button {
-	:deep(.el-button--primary) {
-		margin-top: 10px;
-		width: 100%;
-		height: 40px;
-		font-size: 18px;
-		letter-spacing: 8px;
-	}
+  :deep(.el-button--primary) {
+    margin-top: 10px;
+    width: 100%;
+    height: 40px;
+    font-size: 18px;
+    letter-spacing: 8px;
+  }
 }
 .my-input-group :deep(.el-input-group__append),
 .my-input-group :deep(.el-input-group__prepend) {

@@ -1,63 +1,78 @@
 <template>
-    <div>
-        <h1>实时消息推送</h1>
-        <ul>
-            <li v-for="(message, index) in messages" :key="index">{{ message }}</li>
-        </ul>
-    </div>
+  <div>
+    <h1>实时消息推送</h1>
+    <ul>
+      <li v-for="(message, index) in messages" :key="index">{{ message }}</li>
+    </ul>
+  </div>
 </template>
 
-<script>
-    import { ref, onMounted, onUnmounted } from 'vue';
+<script setup lang="ts" name="SseDemo">
+import { onMounted, onUnmounted, ref } from 'vue'
 
-    export default {
-        setup() {
-            const messages = ref([]);
-            let eventSource = null;
+/** SSE 消息 */
+interface SseMessage {
+  /** 推送者名称 */
+  agentName?: string
+  /** 消息内容 */
+  msg?: string
+  [key: string]: any
+}
 
-            const initSSE = () => {
-                eventSource = new EventSource('http://localhost:8081/polymer/message/sse/connect/1');
+/** 接收到的消息列表 */
+const messages = ref<string[]>([])
 
-                eventSource.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    messages.value.push(`${data.agentName}: ${data.msg}`);
-                };
+/** EventSource 实例 */
+let eventSource: EventSource | null = null
 
-                eventSource.onerror = (error) => {
-                    console.error('SSE error:', error);
-                    eventSource.close();
-                };
-            };
+/** 初始化 SSE 连接 */
+function initSSE() {
+  eventSource = new EventSource('http://localhost:8081/polymer/message/sse/connect/1')
 
-            onMounted(() => {
-                initSSE();
-            });
+  eventSource.onmessage = (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data) as SseMessage
+      messages.value.push(`${data.agentName}: ${data.msg}`)
+    } catch (error) {
+      console.error('SSE 消息解析失败:', error, '原始数据:', event.data)
+    }
+  }
 
-            onUnmounted(() => {
-                if (eventSource) {
-                    eventSource.close();
-                }
-            });
+  eventSource.onerror = (error: Event) => {
+    console.error('SSE error:', error)
+    eventSource?.close()
+  }
+}
 
-            return {
-                messages
-            };
-        }
-    };
+/** 关闭 SSE 连接 */
+function closeSSE() {
+  if (eventSource) {
+    eventSource.close()
+    eventSource = null
+  }
+}
+
+onMounted(() => {
+  initSSE()
+})
+
+onUnmounted(() => {
+  closeSSE()
+})
 </script>
 
 <style scoped>
-    h1 {
-        color: #333;
-    }
-    ul {
-        list-style-type: none;
-        padding: 0;
-    }
-    li {
-        background: #eee;
-        margin: 5px 0;
-        padding: 10px;
-        border-radius: 5px;
-    }
+h1 {
+  color: #333;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+li {
+  background: #eee;
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
 </style>

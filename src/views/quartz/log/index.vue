@@ -1,55 +1,64 @@
 <template>
   <el-card>
-    <el-form :inline="true" :model="state.queryForm" @keyup.enter="getDataList()">
+    <el-form :model="queryParams" ref="queryRef" :inline="true">
       <el-form-item>
-        <el-input v-model="state.queryForm.jobId" placeholder="任务ID"></el-input>
+        <el-input
+            v-model="queryParams.jobId"
+            placeholder="任务ID"
+            clearable
+        ></el-input>
       </el-form-item>
       <el-form-item>
-        <el-input v-model="state.queryForm.jobName" placeholder="任务名称"></el-input>
+        <el-input
+            v-model="queryParams.jobName"
+            placeholder="任务名称"
+            clearable
+        ></el-input>
       </el-form-item>
       <el-form-item>
         <fast-select
-          v-model="state.queryForm.jobGroup"
-          dict-type="schedule_group"
-          clearable
-          placeholder="任务组名"
+            v-model="queryParams.jobGroup"
+            dict-type="schedule_group"
+            clearable
+            placeholder="任务组名"
         ></fast-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="getDataList()">查询</el-button>
+        <el-button type="primary" @click="handleQuery">搜索</el-button>
+        <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
     <el-table
-      v-loading="state.dataListLoading"
-      :data="state.dataList"
-      border
-      style="width: 100%"
+        v-loading="loading"
+        :data="logList"
+        border
+        style="width: 100%"
     >
       <el-table-column
-        type="selection"
-        header-align="center"
-        align="center"
-        width="50"
+          type="selection"
+          header-align="center"
+          align="center"
+          width="50"
       ></el-table-column>
       <el-table-column
-        prop="jobId"
-        label="任务ID"
-        header-align="center"
-        align="center"
-        width="100"
+          prop="jobId"
+          label="任务ID"
+          header-align="center"
+          align="center"
+          width="100"
       ></el-table-column>
       <el-table-column
-        prop="jobName"
-        label="任务名称"
-        header-align="center"
-        align="center"
+          prop="jobName"
+          label="任务名称"
+          header-align="center"
+          align="center"
       ></el-table-column>
       <fast-table-column
-        prop="jobGroup"
-        label="任务组名"
-        dict-type="schedule_group"
+          prop="jobGroup"
+          label="任务组名"
+          dict-type="schedule_group"
       ></fast-table-column>
-      <el-table-column prop="beanName" label="执行方法" dict-type="schedule_group">
+      <el-table-column prop="beanName" label="执行方法">
         <template #default="scope">
           {{ scope.row.beanName }}.{{ scope.row.method }}()
         </template>
@@ -61,70 +70,101 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="times"
-        label="时长（毫秒）"
-        header-align="center"
-        align="center"
-        width="120"
+          prop="times"
+          label="时长（毫秒）"
+          header-align="center"
+          align="center"
+          width="120"
       ></el-table-column>
       <el-table-column
-        prop="createTime"
-        label="执行时间"
-        header-align="center"
-        align="center"
+          prop="createTime"
+          label="执行时间"
+          header-align="center"
+          align="center"
       ></el-table-column>
       <el-table-column
-        label="操作"
-        fixed="right"
-        header-align="center"
-        align="center"
-        width="60"
+          label="操作"
+          fixed="right"
+          header-align="center"
+          align="center"
+          width="80"
       >
         <template #default="scope">
           <el-button
-            v-auth="'schedule:update'"
-            type="primary"
-            link
-            @click="detailHandle(scope.row)"
-            >详情</el-button
+              v-auth="'schedule:log'"
+              type="primary"
+              link
+              @click="detailHandle(scope.row)"
+          >详情</el-button
           >
         </template>
       </el-table-column>
     </el-table>
-    <el-pagination
-      :current-page="state.pageNo"
-      :page-sizes="state.pageSizes"
-      :page-size="state.pageSize"
-      :total="state.total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="sizeChangeHandle"
-      @current-change="currentChangeHandle"
-    >
-    </el-pagination>
+    <!-- 分页 -->
+    <pagination
+        v-show="total > 0"
+        :total="total"
+        v-model:page="queryParams.pageNo"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getDataList"
+    />
   </el-card>
 
   <detail ref="detailRef"></detail>
 </template>
 
 <script setup lang="ts">
-import { useCrud } from '@/hooks';
-import { reactive, ref } from 'vue';
-import Detail from './detail.vue';
-import { IHooksOptions } from '@/types/api/common';
+import { onMounted, ref } from 'vue'
+import Detail from './detail.vue'
+import { ScheduleJobLog, ScheduleJobLogQuery } from '@/types/api/quartz/schedule-log'
+import { getScheduleLogPage } from '@/api/quartz/schedule-log'
 
-const state: IHooksOptions = reactive({
-  dataListUrl: "/schedule/log/page",
-  queryForm: {
-    jobName: "",
-    jobGroup: "",
-    jobId: "",
-  },
-});
+const queryRef = ref()
 
-const detailRef = ref();
-const detailHandle = (row: any) => {
-  detailRef.value.init(row);
-};
+const logList = ref<ScheduleJobLog[]>([])
+const loading = ref<boolean>(true)
+const total = ref<number>(0)
 
-const { getDataList, sizeChangeHandle, currentChangeHandle } = useCrud(state);
+const queryParams = ref<ScheduleJobLogQuery>({
+  pageNo: 1,
+  pageSize: 10,
+  jobId: undefined,
+  jobName: undefined,
+  jobGroup: undefined
+})
+
+// 详情弹窗引用
+const detailRef = ref<InstanceType<typeof Detail>>()
+
+/** 查询定时任务日志列表 */
+function getDataList() {
+  loading.value = true
+  getScheduleLogPage(queryParams.value).then(response => {
+    logList.value = response.data?.list || []
+    total.value = response.data?.total || 0
+    loading.value = false
+  })
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  queryParams.value.pageNo = 1
+  getDataList()
+}
+
+/** 重置按钮操作 */
+function resetQuery() {
+  queryRef.value.resetFields()
+  handleQuery()
+}
+
+/** 详情按钮操作 */
+function detailHandle(row: ScheduleJobLog) {
+  detailRef.value?.open(row)
+}
+
+// 页面初始化
+onMounted(() => {
+  getDataList()
+})
 </script>

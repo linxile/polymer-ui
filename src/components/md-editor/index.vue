@@ -1,10 +1,10 @@
 <template>
-	<div>
-		<!-- <v-md-editor :model-value="modelValue" :height="height" @change="handleChange"></v-md-editor> -->
-	</div>
+  <div>
+    <!-- <v-md-editor :model-value="modelValue" :height="height" @change="handleChange"></v-md-editor> -->
+  </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts" name="MdEditor">
 import VMdEditor from '@kangc/v-md-editor'
 import githubTheme from '@kangc/v-md-editor/lib/theme/github.js'
 import '@kangc/v-md-editor/lib/style/base-editor.css'
@@ -12,24 +12,28 @@ import '@kangc/v-md-editor/lib/theme/style/github.css'
 
 // highlight
 import hljs from 'highlight.js'
+
 VMdEditor.use(githubTheme, {
-	Hljs: hljs
+  Hljs: hljs
 })
 
-const props = defineProps({
-	modelValue: {
-		type: String,
-		required: true
-	},
-	height: {
-		type: String,
-		default: '400px'
-	}
+interface IProps {
+  /** 绑定值 */
+  modelValue: string
+  /** 编辑器高度 */
+  height?: string
+}
+
+withDefaults(defineProps<IProps>(), {
+  height: '400px'
 })
 
-// 编辑器change事件触发
-const emit = defineEmits(['update:modelValue'])
-const handleChange = (text: string, html: string) => {
-	emit('update:modelValue', text)
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+/** 编辑器 change 事件触发 */
+function handleChange(text: string) {
+  emit('update:modelValue', text)
 }
 </script>

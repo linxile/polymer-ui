@@ -1,55 +1,49 @@
 <template>
-	<div class="svg-icon">
-		<svg :class="`${className}`" :style="`color:${color};width: ${size};height: ${size}`" aria-hidden="true">
-			<use :xlink:href="iconName" />
-		</svg>
-	</div>
+  <div class="svg-icon">
+    <svg :class="className" :style="`color:${color};width: ${size};height: ${size}`" aria-hidden="true">
+      <use :xlink:href="iconName" />
+    </svg>
+  </div>
 </template>
 
 <script setup lang="ts" name="SvgIcon">
 import { computed } from 'vue'
 
-const props = defineProps({
-	icon: {
-		type: String,
-    default: 'icon-menu',
-		required: true
-	},
-	color: {
-		type: String,
-		default: ''
-	},
-	className: {
-		type: String,
-		default: ''
-	},
-	size: {
-		type: String,
-		default: ''
-	}
+interface IProps {
+  /** 图标名称（如 icon-menu） */
+  icon?: string
+  /** 图标颜色 */
+  color?: string
+  /** 自定义类名 */
+  className?: string
+  /** 图标大小（如 20px、1em） */
+  size?: string
+}
+
+const props = withDefaults(defineProps<IProps>(), {
+  icon: 'icon-menu',
+  color: '',
+  className: '',
+  size: ''
 })
 
-// https://www.iconfont.cn 图标库需使用前缀 icon- 才能匹配
-const iconName = computed(() => {
-  if (!props.icon){
-    return '#icon-database' // 返回默认值，避免报错
-  }
-
+/** 计算 svg 的 xlink:href，iconfont 需使用 #icon- 前缀 */
+const iconName = computed<string>(() => {
   const cleanIcon = props.icon.replace(/^icon-/, '')
-  return `#icon-${cleanIcon}`
+  return cleanIcon ? `#icon-${cleanIcon}` : '#icon-database'
 })
 </script>
 
 <style lang="scss" scoped>
 .svg-icon {
-	display: inline-block;
-	svg {
-		width: 1em;
-		height: 1em;
-		vertical-align: -0.15em;
-		fill: currentColor;
-		overflow: hidden;
-		flex-shrink: 0;
-	}
+  display: inline-block;
+  svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+    fill: currentColor;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
 }
 </style>

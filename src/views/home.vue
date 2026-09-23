@@ -8,9 +8,7 @@
             <span class="badge-dot"></span>
             基于 Spring Boot 2.7.18 + Vue 3
           </div>
-          <h1 class="hero-title">
-            Polymer 后台管理框架
-          </h1>
+          <h1 class="hero-title">Polymer 后台管理框架</h1>
           <p class="hero-desc">
             polymer 权限管理开发平台采用组件模式，扩展不同的业务功能，
             可以很方便的实现各种业务需求，易上手、易维护。
@@ -26,14 +24,13 @@
           </div>
 
           <div class="hero-actions">
-            <el-button size="large" round plain>
-              当前版本v{{ version }}
-            </el-button>
+            <el-button size="large" round plain>当前版本v{{ version }}</el-button>
             <el-button
                 type="primary"
                 size="large"
                 round
-                @click="goTarget('https://github.com/linxile')">
+                @click="goTarget('https://github.com/linxile')"
+            >
               <svg-icon size="20px" icon="icon-github-fill"></svg-icon>
               访问 GitHub
             </el-button>
@@ -46,11 +43,7 @@
 
         <el-col :xs="24" :sm="24" :lg="10" class="hero-right">
           <div class="stats-grid">
-            <div
-                class="stat-item"
-                v-for="stat in stats"
-                :key="stat.label"
-            >
+            <div class="stat-item" v-for="stat in stats" :key="stat.label">
               <div class="stat-icon-wrapper" :style="{ background: stat.colors.bg }">
                 <el-icon :size="22" :color="stat.colors.icon">
                   <component :is="stat.iconComponent" />
@@ -138,115 +131,150 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts" name="Home">
 import { markRaw } from 'vue'
+import type { Component } from 'vue'
 import {
-  Star, Document, Monitor, Lock, DataBoard, Connection,
-  Files, Setting, Box, Tickets, Message, Phone,
-  Promotion, Edit, Reading, Collection, Tools,
-  Grid, Clock, DataAnalysis, SuccessFilled
+  Clock,
+  Connection,
+  DataAnalysis,
+  DataBoard,
+  Document,
+  Edit,
+  Files,
+  Grid,
+  Lock,
+  Message,
+  Phone,
+  Reading,
+  Setting,
+  SuccessFilled,
+  Tickets,
+  Box,
+  Collection
 } from '@element-plus/icons-vue'
-import appPackage from '../../package.json';
-import SvgIcon from '@/components/svg-icon/index.vue';
+import appPackage from '../../package.json'
 
-export default {
-  name: 'Home',
-  components: {
-    SvgIcon,
-    Star,
-    Document,
-    Monitor,
-    Lock,
-    DataBoard,
-    Connection,
-    Files,
-    Setting,
-    Box,
-    Tickets,
-    Message,
-    Phone,
-    Promotion,
-    Edit,
-    Reading,
-    Collection,
-    Tools
+/** 统计项 */
+interface StatItem {
+  /** 数值 */
+  value: string
+  /** 标签 */
+  label: string
+  /** 图标组件 */
+  iconComponent: Component
+  /** 颜色配置 */
+  colors: {
+    /** 背景（渐变） */
+    bg: string
+    /** 图标颜色 */
+    icon: string
+    /** 数值颜色 */
+    number: string
+  }
+}
+
+/** 功能特性项 */
+interface FeatureItem {
+  /** 功能名 */
+  name: string
+  /** 图标组件 */
+  icon: Component
+}
+
+/** 版本号 */
+const version = appPackage.version
+
+/** 统计数据 */
+const stats: StatItem[] = [
+  {
+    value: '50+',
+    label: '功能模块',
+    iconComponent: markRaw(Grid),
+    colors: {
+      bg: 'linear-gradient(135deg, #e8f5f9 0%, #d1ecf3 100%)',
+      icon: '#2d8fa8',
+      number: '#2d8fa8'
+    }
   },
-  data() {
-    return {
-      version: appPackage.version,
-      stats: [
-        {
-          value: '50+',
-          label: '功能模块',
-          iconComponent: markRaw(Grid),
-          colors: {
-            bg: 'linear-gradient(135deg, #e8f5f9 0%, #d1ecf3 100%)',
-            icon: '#2d8fa8',
-            number: '#2d8fa8'
-          }
-        },
-        {
-          value: '100%',
-          label: '开源免费',
-          iconComponent: markRaw(SuccessFilled),
-          colors: {
-            bg: 'linear-gradient(135deg, #fef3e2 0%, #fce4c8 100%)',
-            icon: '#e8962e',
-            number: '#d4880f'
-          }
-        },
-        {
-          value: '20+',
-          label: '技术组件',
-          iconComponent: markRaw(DataAnalysis),
-          colors: {
-            bg: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-            icon: '#43a047',
-            number: '#2e7d32'
-          }
-        },
-        {
-          value: '7x24',
-          label: '稳定运行',
-          iconComponent: markRaw(Clock),
-          colors: {
-            bg: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
-            icon: '#e91e63',
-            number: '#c2185b'
-          }
-        },
-      ],
-      features: [
-        { name: '权限认证', icon: 'Lock' },
-        { name: '数据脱敏', icon: 'DataBoard' },
-        { name: '分布式限流', icon: 'Connection' },
-        { name: '接口加密', icon: 'Files' },
-        { name: '分布式幂等', icon: 'Setting' },
-        { name: '任务调度', icon: 'Box' },
-        { name: '文件存储', icon: 'Tickets' },
-        { name: '消息通知', icon: 'Message' },
-        { name: '短信邮件', icon: 'Phone' },
-        { name: '代码生成', icon: 'Edit' },
-        { name: '接口文档', icon: 'Reading' },
-        { name: '容器部署', icon: 'Collection' },
-      ],
-      backendTechs: [
-        'Spring Boot 2.7.18', 'Spring Security 6.0', 'MyBatis-Plus',
-        'Druid', 'Jackson', 'Redis 6.x', 'Redisson',
-        'Minio', 'Xxl-Job', 'dynamic-datasource', 'POI'
-      ],
-      frontendTechs: [
-        'Vue 3', 'Element-Plus UI', 'Axios', 'Vue Router',
-        'Pinia', 'SCSS', 'Vite'
-      ]
-    };
+  {
+    value: '100%',
+    label: '开源免费',
+    iconComponent: markRaw(SuccessFilled),
+    colors: {
+      bg: 'linear-gradient(135deg, #fef3e2 0%, #fce4c8 100%)',
+      icon: '#e8962e',
+      number: '#d4880f'
+    }
   },
-  methods: {
-    goTarget(href) {
-      window.open(href, "_blank");
-    },
+  {
+    value: '20+',
+    label: '技术组件',
+    iconComponent: markRaw(DataAnalysis),
+    colors: {
+      bg: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+      icon: '#43a047',
+      number: '#2e7d32'
+    }
   },
-};
+  {
+    value: '7x24',
+    label: '稳定运行',
+    iconComponent: markRaw(Clock),
+    colors: {
+      bg: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
+      icon: '#e91e63',
+      number: '#c2185b'
+    }
+  }
+]
+
+/** 核心功能特性 */
+const features: FeatureItem[] = [
+  { name: '权限认证', icon: markRaw(Lock) },
+  { name: '数据脱敏', icon: markRaw(DataBoard) },
+  { name: '分布式限流', icon: markRaw(Connection) },
+  { name: '接口加密', icon: markRaw(Files) },
+  { name: '分布式幂等', icon: markRaw(Setting) },
+  { name: '任务调度', icon: markRaw(Box) },
+  { name: '文件存储', icon: markRaw(Tickets) },
+  { name: '消息通知', icon: markRaw(Message) },
+  { name: '短信邮件', icon: markRaw(Phone) },
+  { name: '代码生成', icon: markRaw(Edit) },
+  { name: '接口文档', icon: markRaw(Reading) },
+  { name: '容器部署', icon: markRaw(Collection) }
+]
+
+/** 后端技术栈 */
+const backendTechs: string[] = [
+  'Spring Boot 2.7.18',
+  'Spring Security 6.0',
+  'MyBatis-Plus',
+  'Druid',
+  'Jackson',
+  'Redis 6.x',
+  'Redisson',
+  'Minio',
+  'Xxl-Job',
+  'dynamic-datasource',
+  'POI'
+]
+
+/** 前端技术栈 */
+const frontendTechs: string[] = [
+  'Vue 3',
+  'Element-Plus UI',
+  'Axios',
+  'Vue Router',
+  'Pinia',
+  'SCSS',
+  'Vite'
+]
+
+/** 新窗口打开链接 */
+function goTarget(href: string) {
+  window.open(href, '_blank')
+}
 </script>
 
 <style scoped lang="scss">

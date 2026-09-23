@@ -1,110 +1,98 @@
 <template>
-	<el-dialog v-model="visible" :title="!dataForm.id ? '新增' : '修改'" :close-on-click-modal="false">
-		<el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="100px" @keyup.enter="submitHandle()">
-	    				<el-form-item label="用户id" prop="userId">
-					<el-input v-model="dataForm.userId" placeholder="用户id"></el-input>
-				</el-form-item>
-				<el-form-item label="模板编码" prop="templateCode">
-					<el-input v-model="dataForm.templateCode" placeholder="模板编码"></el-input>
-				</el-form-item>
-				<el-form-item label="发送人" prop="sender">
-					<el-input v-model="dataForm.sender" placeholder="发送人"></el-input>
-				</el-form-item>
-				<el-form-item label="内容" prop="content">
-					<el-input v-model="dataForm.content" placeholder="内容"></el-input>
-				</el-form-item>
-				<el-form-item label="类型" prop="type">
-					<el-input v-model="dataForm.type" placeholder="类型"></el-input>
-				</el-form-item>
-				<el-form-item label="是否已读" prop="readStatus">
-					<el-input v-model="dataForm.readStatus" placeholder="是否已读"></el-input>
-				</el-form-item>
-				<el-form-item label="阅读时间" prop="readTime">
-					<el-input v-model="dataForm.readTime" placeholder="阅读时间"></el-input>
-				</el-form-item>
-		</el-form>
-		<template #footer>
-			<el-button @click="visible = false">取消</el-button>
-			<el-button type="primary" @click="submitHandle()">确定</el-button>
-		</template>
-	</el-dialog>
+  <el-dialog v-model="dialogVisible" title="站内信详情" :close-on-click-modal="false" @closed="handleClosed">
+    <el-form ref="notifyMessageRef" :model="form" label-width="100px">
+      <el-form-item label="用户id">
+        <el-input v-model="form.userId" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="模板编码">
+        <el-input v-model="form.templateCode" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="发送人">
+        <el-input v-model="form.sender" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="内容">
+        <el-input v-model="form.content" disabled></el-input>
+      </el-form-item>
+      <el-form-item label="类型">
+        <fast-select v-model="form.type" dict-type="notify_type" disabled style="width: 100%"></fast-select>
+      </el-form-item>
+      <el-form-item label="是否已读">
+        <el-tag v-if="form.readStatus" type="success">已读</el-tag>
+        <el-tag v-else type="info">未读</el-tag>
+      </el-form-item>
+      <el-form-item label="阅读时间">
+        <el-input v-model="form.readTime" disabled></el-input>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button type="primary" @click="cancel">关闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus/es'
-import { useNotifyMessageApi, useNotifyMessageSubmitApi } from '@/api/message/notifyMessage'
+import { ref } from 'vue'
+import { MessageNotifyMessage } from '@/types/api/message/notify-message'
 
-const emit = defineEmits(['refreshDataList'])
+const notifyMessageRef = ref()
+const dialogVisible = ref<boolean>(false)
 
-const visible = ref(false)
-const dataFormRef = ref()
-
-const dataForm = reactive({
-	id: '',
-	userId: '',
-	userType: '',
-	title: '',
-	templateCode: '',
+const form = ref<MessageNotifyMessage>({
+  id: undefined,
+  userId: undefined,
+  userType: undefined,
+  title: '',
+  templateCode: '',
   sender: '',
-	content: '',
-	type: '',
+  content: '',
+  type: undefined,
   senderAvatar: '',
-	readStatus: '',
-	readTime: '',
-	deptId: '',
-	tenantId: '',
-	version: '',
-	deleted: '',
-	creator: '',
-	createTime: '',
-	updater: '',
-	updateTime: ''})
-
-const init = (id?: number) => {
-	visible.value = true
-	dataForm.id = ''
-
-	// 重置表单数据
-	if (dataFormRef.value) {
-		dataFormRef.value.resetFields()
-	}
-
-	if (id) {
-		getNotifyMessage(id)
-	}
-}
-
-const getNotifyMessage = (id: number) => {
-	useNotifyMessageApi(id).then(res => {
-		Object.assign(dataForm, res.data)
-	})
-}
-
-const dataRules = ref({
+  readStatus: false,
+  readTime: '',
+  deptId: undefined
 })
 
-// 表单提交
-const submitHandle = () => {
-	dataFormRef.value.validate((valid: boolean) => {
-		if (!valid) {
-			return false
-		}
-
-		useNotifyMessageSubmitApi(dataForm).then(() => {
-			ElMessage.success({
-				message: '操作成功',
-				duration: 500,
-				onClose: () => {
-					visible.value = false
-					emit('refreshDataList')
-				}
-			})
-		})
-	})
+/** 打开弹窗 */
+function open(row: MessageNotifyMessage) {
+  reset()
+  form.value = { ...row }
+  dialogVisible.value = true
 }
 
+/** 关闭弹窗 */
+function cancel() {
+  dialogVisible.value = false
+}
+
+/** 弹窗关闭后重置表单 */
+function handleClosed() {
+  reset()
+}
+
+/** 对外暴露方法 */
 defineExpose({
-	init
+  open
 })
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    id: undefined,
+    userId: undefined,
+    userType: undefined,
+    title: '',
+    templateCode: '',
+    sender: '',
+    content: '',
+    type: undefined,
+    senderAvatar: '',
+    readStatus: false,
+    readTime: '',
+    deptId: undefined
+  }
+
+  if (notifyMessageRef.value) {
+    notifyMessageRef.value.resetFields()
+  }
+}
 </script>

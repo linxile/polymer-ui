@@ -1,24 +1,24 @@
 <template>
-	<el-dialog v-model="visible" :title="!dataForm.id ? '新增' : '修改'" :close-on-click-modal="false" draggable>
-		<el-form ref="dataFormRef" :model="dataForm" :rules="dataRules" label-width="120px" @keyup.enter="submitHandle()">
-			<el-form-item prop="name" label="名称">
-				<el-input v-model="dataForm.name" placeholder="名称"></el-input>
-			</el-form-item>
-      <el-form-item prop="type" label="部门类型">
-        <fast-select v-model="dataForm.type" dict-type="dept_type" placeholder="部门类型" style="width: 100%"></fast-select>
+  <el-dialog v-model="dialogVisible" :title="title" :close-on-click-modal="false" draggable @closed="handleClosed">
+    <el-form ref="deptRef" :model="form" :rules="rules" label-width="120px" @keyup.enter="submitForm()">
+      <el-form-item prop="name" label="名称">
+        <el-input v-model="form.name" placeholder="名称"></el-input>
       </el-form-item>
-			<el-form-item prop="pid" label="上级部门">
-				<el-tree-select
-						v-model="dataForm.pid"
-						:data="deptList"
-						value-key="id"
-						check-strictly
-						:render-after-expand="false"
-						:props="{ label: 'name', children: 'children' }"
-						style="width: 100%"
-						clearable
-				/>
-			</el-form-item>
+      <el-form-item prop="type" label="部门类型">
+        <fast-select v-model="form.type" dict-type="dept_type" placeholder="部门类型" style="width: 100%"></fast-select>
+      </el-form-item>
+      <el-form-item prop="pid" label="上级部门">
+        <el-tree-select
+            v-model="form.pid"
+            :data="deptList"
+            value-key="id"
+            check-strictly
+            :render-after-expand="false"
+            :props="{ label: 'name', children: 'children' }"
+            style="width: 100%"
+            clearable
+        />
+      </el-form-item>
       <el-form-item prop="leaderId" label="负责人">
         <div class="leader-selection">
           <div v-if="selectedLeader" class="selected-leader">
@@ -28,212 +28,214 @@
             </el-icon>
           </div>
           <el-button text bg :icon="Plus" @click="openLeaderDialog">
-            {{ dataForm.leaderId ? '修改负责人' : '选择负责人' }}
+            {{ form.leaderId ? '修改负责人' : '选择负责人' }}
           </el-button>
         </div>
       </el-form-item>
-			<el-form-item prop="sort" label="排序">
-				<el-input-number v-model="dataForm.sort" controls-position="right" :min="0" aria-label="排序"></el-input-number>
-			</el-form-item>
-		</el-form>
-		<template #footer>
-			<el-button @click="visible = false">取消</el-button>
-			<el-button type="primary" @click="submitHandle()">确定</el-button>
-		</template>
+      <el-form-item prop="sort" label="排序">
+        <el-input-number v-model="form.sort" controls-position="right" :min="0" aria-label="排序"></el-input-number>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="submitForm()">确定</el-button>
+    </template>
     <!-- 负责人选择组件 -->
     <user-transfer
-        v-model="dataForm.leaderId"
+        v-model="form.leaderId"
         ref="userTransferRef"
-        :title="!dataForm.leaderId ? '选择负责人' : '修改负责人'"
+        :title="!form.leaderId ? '选择负责人' : '修改负责人'"
         :multiple="false"
         @confirm="handleLeaderSelected"
     />
-	</el-dialog>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-	import { reactive, ref } from 'vue'
-  import {Close, Plus} from '@element-plus/icons-vue'
-	import { ElMessage } from 'element-plus/es'
-	import { useDeptListApi, useDeptSubmitApi } from '@/api/sys/dept'
-  import UserTransfer from '@/components/user-transfer/index.vue'
+import { ref } from 'vue'
+import { Close, Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus/es'
+import { getDeptById, submitDept, useDeptListApi } from '@/api/sys/dept'
+import { SysDept } from '@/types/api/sys/dept'
+import UserTransfer from '@/components/user-transfer/index.vue'
 
-	const emit = defineEmits(['refreshDataList'])
+const emit = defineEmits<{ (e: 'success'): void }>()
+const deptRef = ref()
+const userTransferRef = ref()
+const deptList = ref<SysDept[]>([])
+const dialogVisible = ref<boolean>(false)
+const title = ref<string>("")
+const isEdit = ref<boolean>(false)
+const selectedLeader = ref<{ id: number; username: string } | null>(null)
 
-	const visible = ref(false)
-	const deptList = ref([])
-	const dataFormRef = ref()
+const form = ref<SysDept>({
+  id: undefined,
+  name: '',
+  type: 1,
+  pid: undefined,
+  parentName: '',
+  leaderId: undefined,
+  sort: 0
+})
 
-  const userTransferRef = ref()
-  const selectedLeader = ref<{ id: number; username: string } | null>(null)
+const rules = {
+  name: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
+  type: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
+  parentName: [{ required: true, message: '必填项不能为空', trigger: 'blur' }]
+}
 
-	const dataForm = reactive({
-		id: '',
-		name: '',
-		type: 1,
-		pid: '',
-		parentName: '',
-    leaderId: null,
-		sort: 0
-	})
+/** 打开弹窗（新增） */
+function open(row?: SysDept) {
+  reset()
+  isEdit.value = false
+  title.value = "添加部门"
+  dialogVisible.value = true
+  getDeptList()
 
-	const init = (isUpdate: boolean, row: any) => {
-		visible.value = true
-
-		// 重置表单数据
-		if (dataFormRef.value) {
-			dataFormRef.value.resetFields()
-		}
-
-    // 重置负责人信息
-    selectedLeader.value = null
-
-		// 更新表单数据
-		if (row) {
-			getDept(isUpdate, row)
-		} else {
-			dataForm.pid = ''
-			dataForm.parentName = ''
-      dataForm.leaderId = null
-		}
-
-		// 部门列表
-		getDeptList()
-	}
-
-	// 获取部门列表
-	const getDeptList = async () => {
-		const res = await useDeptListApi()
-		deptList.value = res.data
-	}
-
-	// 获取信息
-	const getDept = (isUpdate: boolean, row: any) => {
-		Object.assign(dataForm, row)
-
-    // 设置负责人信息
-    if (row.leaderId) {
-      dataForm.leaderId = row.leaderId
-      // 如果有负责人名称，直接设置
-      if (row.leaderName) {
-        selectedLeader.value = {
-          id: row.leaderId,
-          username: row.leaderName
-        }
-      } else {
-        // 这里简化为只显示ID
-        selectedLeader.value = {
-          id: row.leaderId,
-          username: `用户 ${row.leaderId}`
-        }
-      }
-    }
-
-		if (!isUpdate) {
-			// 是新增，重置表单数据
-			dataForm.pid = dataForm.id
-			dataForm.parentName = dataForm.name
-			dataForm.id = ''
-			dataForm.name = ''
-			dataForm.sort = 0
-      dataForm.leaderId = null
-      selectedLeader.value = null
-		}
-	}
-
-	const dataRules = ref({
-		name: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
-		type: [{ required: true, message: '必填项不能为空', trigger: 'blur' }],
-		parentName: [{ required: true, message: '必填项不能为空', trigger: 'blur' }]
-	})
-
-  // 打开负责人选择对话框
-  const openLeaderDialog = () => {
-    userTransferRef.value.open(dataForm.leaderId)
+  // 从某行"新增"子部门时，带入父级
+  if (row) {
+    form.value.pid = row.id
+    form.value.parentName = row.name
   }
+}
 
-  // 处理负责人选择结果
-  const handleLeaderSelected = (user: any) => {
-    if (user) {
+/** 打开弹窗（修改） */
+function openWithData(id: number) {
+  reset()
+  isEdit.value = true
+  title.value = "修改部门"
+  getDeptList()
+  getDeptById(id).then(response => {
+    form.value = response.data!
+    // 回显负责人
+    if (form.value.leaderId) {
       selectedLeader.value = {
-        id: user.id,
-        username: user.username
+        id: form.value.leaderId,
+        username: form.value.leaderName || `用户 ${form.value.leaderId}`
       }
-      dataForm.leaderId = user.id
-    } else {
-      selectedLeader.value = null
-      dataForm.leaderId = null
     }
-  }
+    dialogVisible.value = true
+  })
+}
 
-  // 清除已选择的负责人
-  const clearLeader = () => {
+/** 获取部门列表 */
+function getDeptList() {
+  useDeptListApi().then(response => {
+    deptList.value = response.data || []
+  })
+}
+
+/** 关闭弹窗 */
+function cancel() {
+  dialogVisible.value = false
+}
+
+/** 弹窗关闭后重置表单 */
+function handleClosed() {
+  reset()
+}
+
+/** 对外暴露方法 */
+defineExpose({
+  open,
+  openWithData
+})
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    id: undefined,
+    name: '',
+    type: 1,
+    pid: undefined,
+    parentName: '',
+    leaderId: undefined,
+    sort: 0
+  }
+  selectedLeader.value = null
+
+  if (deptRef.value) {
+    deptRef.value.resetFields()
+  }
+}
+
+/** 打开负责人选择对话框 */
+function openLeaderDialog() {
+  userTransferRef.value.open(form.value.leaderId)
+}
+
+/** 处理负责人选择结果 */
+function handleLeaderSelected(user: any) {
+  if (user) {
+    selectedLeader.value = {
+      id: user.id,
+      username: user.username
+    }
+    form.value.leaderId = user.id
+  } else {
     selectedLeader.value = null
-    dataForm.leaderId = null
+    form.value.leaderId = undefined
   }
+}
 
-	// 表单提交
-	const submitHandle = () => {
-		dataFormRef.value.validate((valid: boolean) => {
-			if (!valid) {
-				return false
-			}
+/** 清除已选择的负责人 */
+function clearLeader() {
+  selectedLeader.value = null
+  form.value.leaderId = undefined
+}
 
-			useDeptSubmitApi(dataForm).then(() => {
-				ElMessage.success({
-					message: '操作成功',
-					duration: 500,
-					onClose: () => {
-						visible.value = false
-						emit('refreshDataList')
-					}
-				})
-			})
-		})
-	}
-
-	defineExpose({
-		init
-	})
+/** 提交按钮 */
+function submitForm() {
+  deptRef.value.validate((valid: boolean) => {
+    if (valid) {
+      const msg = isEdit.value ? "修改成功" : "新增成功"
+      submitDept(form.value).then(() => {
+        ElMessage.success(msg)
+        dialogVisible.value = false
+        emit('success')
+      })
+    }
+  })
+}
 </script>
 
 <style lang="scss" scoped>
-	.dept-list {
-	::v-deep(.el-input__inner) {
-		cursor: pointer;
-	}
-	::v-deep(.el-input__suffix) {
-		cursor: pointer;
-	}
-	}
+.dept-list {
+  ::v-deep(.el-input__inner) {
+    cursor: pointer;
+  }
+  ::v-deep(.el-input__suffix) {
+    cursor: pointer;
+  }
+}
 
-  .leader-selection {
+.leader-selection {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+
+  .selected-leader {
     display: flex;
-    flex-direction: row;
-    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    background-color: #f5f7fa;
+    border-radius: 20px;
+    border: 0 solid #dcdfe6;
 
-    .selected-leader {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 10px;
-      background-color: #f5f7fa;
-      border-radius: 20px;
-      border: 0 solid #dcdfe6;
+    .delete-icon {
+      cursor: pointer;
+      color: #f56c6c;
+    }
 
-      .delete-icon {
-        cursor: pointer;
-        color: #f56c6c;
-      }
-
-      .delete-icon:hover {
-        color: #e4393c;
-      }
+    .delete-icon:hover {
+      color: #e4393c;
     }
   }
+}
 
-  .el-button.is-text:not(.is-disabled).is-has-bg {
-    background-color: var(--el-fill-color-light);
-    border-radius: 20px;
-  }
+.el-button.is-text:not(.is-disabled).is-has-bg {
+  background-color: var(--el-fill-color-light);
+  border-radius: 20px;
+}
 </style>

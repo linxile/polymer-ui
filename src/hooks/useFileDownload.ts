@@ -3,14 +3,16 @@ import service from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import qs from 'qs'
 import FileUrlUtils from '@/utils/fileUrlUtils'
-import { ref, Ref } from 'vue'
+import { ref } from 'vue'
+import type { Ref } from 'vue'
+import type { AxiosResponse } from 'axios'
 
 export interface IFileDownloadOptions {
-    // 导出时的额外参数（会合并到 queryForm）
+    /** 导出时的额外参数（会合并到 queryForm） */
     extraParams?: Record<string, any>
-    // 默认文件名（不含后缀）
+    /** 默认文件名（不含后缀） */
     defaultFileName?: string
-    // 默认文件扩展名
+    /** 默认文件扩展名 */
     defaultExt?: string
 }
 
@@ -18,18 +20,18 @@ export interface IFileDownloadOptions {
  * 独立的文件下载与导出 Composable
  * 职责：处理所有文件下载、导出相关的逻辑
  */
-export const useFileDownload = (options?: IFileDownloadOptions) => {
+export function useFileDownload(options?: IFileDownloadOptions) {
     const exportLoading: Ref<boolean> = ref(false)
 
     /**
      * 从响应头中提取文件名
      */
-    const getFileNameFromResponse = (res: any, fallbackName?: string): string => {
+    function getFileNameFromResponse(res: AxiosResponse<Blob>, fallbackName?: string): string {
         if (fallbackName) {
             return fallbackName
         }
 
-        const contentDisposition = res.headers['content-disposition']
+        const contentDisposition = res.headers['content-disposition'] as string | undefined
         if (contentDisposition) {
             // 优先匹配 filename* (支持 UTF-8 编码)
             const matchStar = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i)
@@ -49,17 +51,16 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
     }
 
     /**
-     * ✅ 修复：创建 Blob 副本，避免原始 Blob 被消费
+     * 创建 Blob 副本，避免原始 Blob 被消费
      */
-    const createBlobCopy = (blob: Blob): Blob => {
-        // 读取原始 Blob 内容并创建新 Blob，保留原始 Blob 供后续使用
+    function createBlobCopy(blob: Blob): Blob {
         return blob.slice(0, blob.size, blob.type)
     }
 
     /**
      * 触发浏览器下载
      */
-    const triggerDownload = (data: Blob, fileName: string, fileType?: string) => {
+    function triggerDownload(data: Blob, fileName: string, fileType?: string): void {
         const link = document.createElement('a')
         link.style.display = 'none'
         link.download = fileName
@@ -81,15 +82,13 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
 
     /**
      * 检查响应是否为错误响应（JSON 格式）
-     * 使用 blob.slice() 创建副本，不破坏原始数据
      */
-    const checkErrorResponse = async (res: any): Promise<{ isError: boolean; blobCopy?: Blob }> => {
-        const contentType = res.headers['content-type'] || ''
+    async function checkErrorResponse(res: AxiosResponse<Blob>): Promise<{ isError: boolean; blobCopy?: Blob }> {
+        const contentType = (res.headers['content-type'] as string) || ''
 
         // 如果是 JSON，说明是错误响应
         if (contentType.includes('application/json')) {
             try {
-                // 从原始 blob 读取文本
                 const text = await res.data.text()
                 try {
                     const errorData = JSON.parse(text)
@@ -104,7 +103,6 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
         }
 
         // 创建 Blob 副本，供后续下载使用
-        // 原始 res.data 没有被消费，但为了安全，我们创建副本传递出去
         const blobCopy = createBlobCopy(res.data)
 
         // 检查文件是否为空
@@ -119,7 +117,7 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
     /**
      * 统一的下载错误处理
      */
-    const handleDownloadError = async (err: any): Promise<void> => {
+    async function handleDownloadError(err: any): Promise<void> {
         if (err.response) {
             const { status, data } = err.response
 
@@ -148,15 +146,15 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
     /**
      * 通用下载方法（支持任意 URL）
      */
-    const download = async (url: string, filename?: string, method: string = 'GET'): Promise<any> => {
+    async function download(url: string, filename?: string, method: string = 'GET'): Promise<void> {
         try {
             const fullUrl = await FileUrlUtils.getFullUrl(url)
 
             const res = await service({
                 responseType: 'blob',
                 url: fullUrl,
-                method: method
-            })
+                method
+            }) as AxiosResponse<Blob>
 
             // 检查错误响应，同时获取 Blob 副本
             const { isError, blobCopy } = await checkErrorResponse(res)
@@ -177,11 +175,11 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
     /**
      * 导出方法（专用于列表数据导出，带查询参数）
      */
-    const exportFile = async (
+    async function exportFile(
         exportUrl: string,
         queryForm: Record<string, any>,
         filename?: string
-    ): Promise<void> => {
+    ): Promise<void> {
         if (exportLoading.value) {
             return
         }
@@ -217,7 +215,7 @@ export const useFileDownload = (options?: IFileDownloadOptions) => {
                 responseType: 'blob',
                 url: fullUrl,
                 method: 'GET'
-            })
+            }) as AxiosResponse<Blob>
 
             // 检查错误响应，同时获取 Blob 副本
             const { isError, blobCopy } = await checkErrorResponse(res)

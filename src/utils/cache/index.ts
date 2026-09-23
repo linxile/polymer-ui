@@ -9,16 +9,24 @@ class Cache {
 		return Storage.getItem(CacheKey.TokenKey) || ''
 	}
 
-	setToken = (value: string) => {
-		Storage.setItem(CacheKey.TokenKey, value)
+	setToken = (value: string | null) => {
+		if (value) {
+			Storage.setItem(CacheKey.TokenKey, value)
+		} else {
+			Storage.removeItem(CacheKey.TokenKey)
+		}
 	}
 
 	getRefreshToken = (): string => {
 		return Storage.getItem(CacheKey.RefreshTokenKey) || ''
 	}
 
-	setRefreshToken = (value: string) => {
-		Storage.setItem(CacheKey.RefreshTokenKey, value)
+	setRefreshToken = (value: string | null) => {
+		if (value) {
+			Storage.setItem(CacheKey.RefreshTokenKey, value)
+		} else {
+			Storage.removeItem(CacheKey.RefreshTokenKey)
+		}
 	}
 
 

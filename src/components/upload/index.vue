@@ -1,7 +1,7 @@
 <template>
   <div class="upload">
     <!-- 图片上传模式 -->
-    <div class="upload-image" v-if="props.onlyImage">
+    <div class="upload-image" v-if="onlyImage">
       <div class="upload-image-content">
         <div class="item" v-for="(item, index) in fileListModel" :key="index">
           <el-image style="width: 100%; height: 100%" :src="fullUrlMap[item.url] || item.url"></el-image>
@@ -22,13 +22,14 @@
             </el-icon>
           </div>
         </div>
-        <div class="main" v-if="!props.maxCount || fileListModel.length < props.maxCount">
+        <div class="main" v-if="!maxCount || fileListModel.length < maxCount">
           <el-upload
               ref="uploadRef"
               class="main-upload"
               :show-file-list="false"
               :http-request="uploadAttachmentWithLoading"
               :on-success="onSuccess"
+              :on-error="onError"
               :before-upload="onClickBeforeUpload"
               :accept="acceptStr"
               v-loading="uploadLoading"
@@ -52,15 +53,17 @@
               :show-file-list="false"
               :http-request="uploadAttachmentWithLoading"
               :on-success="onSuccess"
+              :on-error="onError"
               :before-upload="onClickBeforeUpload"
-              :accept="acceptStr">
+              :accept="acceptStr"
+          >
             <slot name="upload">
               <el-button type="primary" :loading="uploadLoading">上传</el-button>
             </slot>
           </el-upload>
         </div>
         <!-- 当 noFileList 为 true 时，不显示文件列表 -->
-        <template v-if="!props.noFileList">
+        <template v-if="!noFileList">
           <div class="item" v-for="(item, index) in fileListModel" :key="index">
             <div class="item-name">
               {{ item.name }}
@@ -91,37 +94,45 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { Plus, View, Delete } from '@element-plus/icons-vue';
-import { ElMessage, UploadProps, UploadRequestOptions } from 'element-plus';
-import { reactive, ref, computed, watch } from 'vue';
-import { useFileUpload } from '@/hooks/useFileUpload';
-import FileUrlUtils from '@/utils/fileUrlUtils';
-import type {AttachmentUploadResult} from '@/types/api/common'
+<script setup lang="ts" name="Upload">
+import { computed, reactive, ref, watch } from 'vue'
+import { Plus, View, Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import type { UploadProps, UploadRequestOptions } from 'element-plus'
+import { useFileUpload } from '@/hooks/useFileUpload'
+import FileUrlUtils from '@/utils/fileUrlUtils'
+import type { AttachmentUploadResult } from '@/types/api/common'
 
 // ==================== 类型定义 ====================
 
 interface FileItem {
-  name: string;
-  url: string;
-  size: number;
-  platform: string;
+  name: string
+  url: string
+  size: number
+  platform: string
+  [key: string]: any
 }
 
 interface PreviewConfig {
-  show: boolean;
-  urlList: string[];
+  show: boolean
+  urlList: string[]
 }
 
 interface IProps {
-  onlyImage?: boolean;
-  accept?: string[];
-  fileList?: FileItem[];
-  previewExts?: string[];
-  maxSize?: number;
-  maxCount?: number;
+  /** 仅图片模式 */
+  onlyImage?: boolean
+  /** 允许的文件扩展名，如 ['jpg', 'png'] */
+  accept?: string[]
+  /** 文件列表 */
+  fileList?: FileItem[]
+  /** 允许预览的文件扩展名 */
+  previewExts?: string[]
+  /** 最大文件大小（MB） */
+  maxSize?: number
+  /** 最大上传数量 */
+  maxCount?: number
   /** 是否不显示文件列表（用于表头场景） */
-  noFileList?: boolean;
+  noFileList?: boolean
 }
 
 const props = withDefaults(defineProps<IProps>(), {
@@ -131,235 +142,233 @@ const props = withDefaults(defineProps<IProps>(), {
   previewExts: () => ['jpg', 'png', 'jpeg', 'gif', 'webp', 'bmp', 'svg'],
   maxSize: 100,
   maxCount: undefined,
-  noFileList: false,
-});
+  noFileList: false
+})
 
 // ==================== Emits ====================
 
 const emit = defineEmits<{
-  (e: "update:fileList", value: FileItem[]): void;
-  (e: "update-file", value: FileItem[]): void;
-  (e: "success", result: AttachmentUploadResult): void;
-  (e: "error", error: Error): void;
-}>();
+  (e: 'update:fileList', value: FileItem[]): void
+  (e: 'update-file', value: FileItem[]): void
+  (e: 'success', result: AttachmentUploadResult): void
+  (e: 'error', error: Error): void
+}>()
 
 // ==================== Hooks ====================
 
-const { uploadAttachment } = useFileUpload();
+const { uploadAttachment } = useFileUpload()
 
 // ==================== 响应式状态 ====================
 
-const uploadLoading = ref(false);
-const fileListModel = ref<FileItem[]>([]);
-const fullUrlMap = ref<Record<string, string>>({});
+const uploadRef = ref()
+const uploadLoading = ref<boolean>(false)
+const fileListModel = ref<FileItem[]>([])
+const fullUrlMap = ref<Record<string, string>>({})
 const preview = reactive<PreviewConfig>({
   show: false,
-  urlList: [],
-});
+  urlList: []
+})
 
 // ==================== 计算属性 ====================
 
 const acceptStr = computed(() => {
-  if (!props.accept || props.accept.length === 0) return undefined;
-  return props.accept.map(ext => `.${ext}`).join(',');
-});
+  if (!props.accept || props.accept.length === 0) return undefined
+  return props.accept.map(ext => `.${ext}`).join(',')
+})
 
 // ==================== 工具方法 ====================
 
-/**
- * 判断是否为完整 URL
- */
-const isFullUrl = (url: string): boolean => {
-  if (!url) return false;
-  return /^https?:\/\//.test(url) ||
-      url.startsWith('data:') ||
-      url.startsWith('blob:');
-};
+/** 判断是否为完整 URL */
+function isFullUrl(url: string): boolean {
+  if (!url) return false
+  return /^https?:\/\//.test(url) || url.startsWith('data:') || url.startsWith('blob:')
+}
 
-/**
- * 加载单个文件的完整 URL
- */
-const loadFullUrl = async (url: string): Promise<string> => {
-  if (!url) return '';
-  if (isFullUrl(url)) return url;
+/** 加载单个文件的完整 URL */
+async function loadFullUrl(url: string): Promise<string> {
+  if (!url) return ''
+  if (isFullUrl(url)) return url
+  return await FileUrlUtils.getFullUrl(url)
+}
 
-  return await FileUrlUtils.getFullUrl(url);
-};
-
-/**
- * 加载所有文件的完整 URL
- */
-const loadAllFullUrls = async (items: FileItem[]) => {
-  const map: Record<string, string> = {};
-
+/** 加载所有文件的完整 URL */
+async function loadAllFullUrls(items: FileItem[]) {
+  const map: Record<string, string> = {}
   for (const item of items) {
     if (item.url && !isFullUrl(item.url)) {
-      map[item.url] = await loadFullUrl(item.url);
+      map[item.url] = await loadFullUrl(item.url)
     }
   }
-
-  fullUrlMap.value = map;
-};
+  fullUrlMap.value = map
+}
 
 // ==================== 监听器 ====================
 
 watch(
     () => props.fileList,
     async (newVal) => {
-      const list = Array.isArray(newVal) ? [...newVal] : [];
-      fileListModel.value = list;
+      const list = Array.isArray(newVal) ? [...newVal] : []
+      fileListModel.value = list
 
-      // 加载完整 URL
       if (list.length > 0) {
-        await loadAllFullUrls(list);
+        await loadAllFullUrls(list)
       } else {
-        fullUrlMap.value = {};
+        fullUrlMap.value = {}
       }
     },
     { immediate: true, deep: true }
-);
+)
 
 // ==================== 核心方法 ====================
 
-const updateFileList = (newList: FileItem[]) => {
-  fileListModel.value = newList;
-  emit("update:fileList", newList);
-  emit("update-file", newList);
+/** 更新文件列表 */
+function updateFileList(newList: FileItem[]) {
+  fileListModel.value = newList
+  emit('update:fileList', newList)
+  emit('update-file', newList)
 
-  // 加载新文件的完整 URL
   if (newList.length > 0) {
-    loadAllFullUrls(newList);
+    loadAllFullUrls(newList)
   }
-};
+}
 
-const onClickBeforeUpload: UploadProps["beforeUpload"] = (file) => {
+/** 上传前校验 */
+const onClickBeforeUpload: UploadProps['beforeUpload'] = (file) => {
   if (props.accept && props.accept.length > 0) {
-    const fileNameList = file.name.split(".");
-    const fileType = fileNameList[fileNameList.length - 1].toLowerCase();
+    const fileNameList = file.name.split('.')
+    const fileType = fileNameList[fileNameList.length - 1].toLowerCase()
 
     if (!props.accept.map(ext => ext.toLowerCase()).includes(fileType)) {
-      ElMessage.error(`文件格式不正确，仅支持：${props.accept.join(', ')}`);
-      return false;
+      ElMessage.error(`文件格式不正确，仅支持：${props.accept.join(', ')}`)
+      return false
     }
   }
 
   if (props.maxSize && props.maxSize > 0) {
-    const maxSizeBytes = props.maxSize * 1024 * 1024;
+    const maxSizeBytes = props.maxSize * 1024 * 1024
     if (file.size > maxSizeBytes) {
-      ElMessage.error(`文件大小不能超过 ${props.maxSize}MB`);
-      return false;
+      ElMessage.error(`文件大小不能超过 ${props.maxSize}MB`)
+      return false
     }
   }
 
-  return true;
-};
+  return true
+}
 
-const uploadAttachmentWithLoading = async (options: UploadRequestOptions) => {
-  uploadLoading.value = true;
+/** 上传（带 loading） */
+async function uploadAttachmentWithLoading(options: UploadRequestOptions) {
+  uploadLoading.value = true
   try {
-    return await uploadAttachment(options);
+    return await uploadAttachment(options)
   } catch (error) {
-    uploadLoading.value = false;
-    throw error;
+    uploadLoading.value = false
+    throw error
   }
-};
+}
 
-const onSuccess = (result: AttachmentUploadResult) => {
-  uploadLoading.value = false;
+/** 上传成功 */
+function onSuccess(result: AttachmentUploadResult) {
+  uploadLoading.value = false
 
   if (!result || !result.url) {
-    ElMessage.error("上传失败：未获取到文件信息");
-    return;
+    ElMessage.error('上传失败：未获取到文件信息')
+    return
   }
 
   // 只有非 noFileList 模式才更新文件列表
   if (!props.noFileList) {
-    const newList = [...fileListModel.value, result];
-    updateFileList(newList);
+    const newList = [...fileListModel.value, result as unknown as FileItem]
+    updateFileList(newList)
   }
 
   // 触发成功事件
-  emit("success", result);
-  ElMessage.success(`文件 ${result.name} 上传成功`);
-};
+  emit('success', result)
+  ElMessage.success(`文件 ${result.name} 上传成功`)
+}
 
-const onError = (error: Error) => {
-  uploadLoading.value = false;
-  emit("error", error);
-  ElMessage.error(error.message || "上传失败");
-};
+/** 上传失败 */
+function onError(error: Error) {
+  uploadLoading.value = false
+  emit('error', error)
+  ElMessage.error(error.message || '上传失败')
+}
 
-const onClickDelete = (index: number) => {
-  const newList = [...fileListModel.value];
-  const deleted = newList.splice(index, 1);
+/** 删除文件 */
+function onClickDelete(index: number) {
+  const newList = [...fileListModel.value]
+  const deleted = newList.splice(index, 1)
 
-  // 从映射中移除
   if (deleted.length > 0 && deleted[0].url) {
-    delete fullUrlMap.value[deleted[0].url];
+    delete fullUrlMap.value[deleted[0].url]
   }
 
-  updateFileList(newList);
+  updateFileList(newList)
 
   if (deleted.length > 0) {
-    ElMessage.success(`已删除文件：${deleted[0].name}`);
+    ElMessage.success(`已删除文件：${deleted[0].name}`)
   }
-};
+}
 
-const judgeAllowPreview = (item: FileItem): boolean => {
-  if (!item || !item.name) return false;
+/** 判断是否允许预览 */
+function judgeAllowPreview(item: FileItem): boolean {
+  if (!item || !item.name) return false
 
-  const fileNameList = item.name.split(".");
-  const fileType = fileNameList[fileNameList.length - 1].toLowerCase();
+  const fileNameList = item.name.split('.')
+  const fileType = fileNameList[fileNameList.length - 1].toLowerCase()
 
-  const previewExts = props.previewExts?.length ? props.previewExts : ['jpg', 'png', 'jpeg', 'gif', 'webp', 'bmp', 'svg'];
-  return previewExts.map(ext => ext.toLowerCase()).includes(fileType);
-};
+  const previewExts = props.previewExts?.length
+      ? props.previewExts
+      : ['jpg', 'png', 'jpeg', 'gif', 'webp', 'bmp', 'svg']
+
+  return previewExts.map(ext => ext.toLowerCase()).includes(fileType)
+}
 
 // ==================== 预览 ====================
 
-const onClickPreview = async (item: FileItem) => {
-  if (!item?.url) return;
+/** 点击预览 */
+async function onClickPreview(item: FileItem) {
+  if (!item?.url) return
 
-  // 获取完整 URL
-  let fullUrl = fullUrlMap.value[item.url];
+  let fullUrl = fullUrlMap.value[item.url]
 
   if (!fullUrl && !isFullUrl(item.url)) {
-    fullUrl = await loadFullUrl(item.url);
-    // 更新映射
+    fullUrl = await loadFullUrl(item.url)
     if (fullUrl) {
-      fullUrlMap.value = { ...fullUrlMap.value, [item.url]: fullUrl };
+      fullUrlMap.value = { ...fullUrlMap.value, [item.url]: fullUrl }
     }
   } else if (isFullUrl(item.url)) {
-    fullUrl = item.url;
+    fullUrl = item.url
   }
 
   if (fullUrl) {
-    preview.show = true;
-    preview.urlList = [fullUrl];
+    preview.show = true
+    preview.urlList = [fullUrl]
   } else {
-    ElMessage.error('获取预览地址失败');
+    ElMessage.error('获取预览地址失败')
   }
-};
+}
 
-const onClosePreview = () => {
-  preview.show = false;
-  preview.urlList = [];
-};
+/** 关闭预览 */
+function onClosePreview() {
+  preview.show = false
+  preview.urlList = []
+}
 
 // ==================== 暴露方法 ====================
 
 defineExpose({
   clearFiles: () => {
-    updateFileList([]);
+    updateFileList([])
   },
   getFileList: () => fileListModel.value,
   resetUploadStatus: () => {
-    uploadLoading.value = false;
-  },
-});
+    uploadLoading.value = false
+  }
+})
 </script>
 
 <style lang="scss" scoped>
+/* 样式与原来保持一致 */
 .upload {
   &-image {
     &-content {

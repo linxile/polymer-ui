@@ -1,44 +1,38 @@
-
-/**
- * API响应接口
- */
-export interface ApiResponse<T = any> {
-  code: number
-  data: T
-  msg?: string
-  message?: string
+// src/types/api/common.ts
+/** API 通用响应类型 */
+export interface Result<T> {
+  /** 状态码 */
+  code: number;
+  /** 返回内容 */
+  msg: string;
+  /** 数据对象 */
+  data?: T;
 }
 
-/** Treeselect树结构类型 */
-export interface TreeSelect {
-  /** 节点ID */
-  id?: number
-  /** 节点名称 */
-  label?: string
-  /** 子节点 */
-  children: TreeSelect[]
-}
-
-/**
- * 附件上传结果接口
- */
-export interface AttachmentUploadResult {
-  name: string
-  url: string
-  size: number
-  platform: string
+/** 通用树形节点 */
+export interface TreeNode<T = any> {
+  /** 主键 */
+  id?: number;
+  /** 上级ID */
+  pid?: number;
+  /** 节点名称（前端 UI 组件常用 label） */
+  label?: string;
+  /** 节点名称（后端常用 name） */
+  name?: string;
+  /** 子节点列表 */
+  children?: TreeNode<T>[];
 }
 
 /**
- * 数据导入结果接口（由各业务模块定义，此处为示例）
+ * 数据导入结果接口
  */
-export interface DataImportResult<T = any> {
+export interface DataImportResult {
   /** 是否通过校验 */
-  passed?: boolean
+  passed?: boolean;
   /** 错误文件相对路径 */
-  errorFileUrl?: string
+  errorFileUrl?: string;
   /** 信息 */
-  message?: string
+  message?: string;
 }
 
 export interface IHooksOptions {
@@ -77,4 +71,30 @@ export interface IHooksOptions {
   exportLoading?: boolean
 }
 
+/** 分页参数类型 */
+export interface PageParam {
+  /** 当前记录起始索引 */
+  pageNo?: number;
+  /** 每页显示记录数 */
+  pageSize?: number;
+}
 
+/** 分页响应（通用） */
+export interface PageResult<T> {
+  list: T[];
+  total: number;
+}
+
+/** Entity基类 */
+export interface BaseEntity {
+  /** 主键 */
+  id?: number;
+  /** 创建者 */
+  creator?: number;
+  /** 更新者 */
+  updater?: number;
+  /** 创建时间 */
+  createTime?: string;
+  /** 更新时间 */
+  updateTime?: string;
+}

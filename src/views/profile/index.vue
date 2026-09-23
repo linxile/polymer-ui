@@ -2,10 +2,9 @@
   <el-row :gutter="20">
     <el-col :span="8">
       <el-card class="profile-card">
-        <template #header >个人信息</template>
+        <template #header>个人信息</template>
         <el-row justify="center" align="middle">
           <el-col :span="8">
-            <!-- 头像展示 -->
             <div class="avatar-wrapper">
               <el-image
                   :src="avatarUrl"
@@ -36,10 +35,10 @@
             <svg-icon icon="icon-apartment" /> 所属部门 <span>{{ userStore.user.deptName || '/' }}</span>
           </li>
           <li>
-            <svg-icon icon="icon-tag" /> 所属岗位 <span>{{ userStore.user.postNameList || '/' }} </span>
+            <svg-icon icon="icon-tag" /> 所属岗位 <span>{{ userStore.user.postNameList || '/' }}</span>
           </li>
           <li>
-            <svg-icon icon="icon-tag" /> 所属角色 <span>{{ userStore.user.roleNameList || '/' }} </span>
+            <svg-icon icon="icon-tag" /> 所属角色 <span>{{ userStore.user.roleNameList || '/' }}</span>
           </li>
           <li>
             <svg-icon icon="icon-calendar-check" /> 创建日期 <span>{{ userStore.user.createTime }}</span>
@@ -49,10 +48,10 @@
     </el-col>
     <el-col :span="16">
       <el-card>
-        <template #header> 基本信息 </template>
+        <template #header>基本信息</template>
         <el-tabs v-model="activeName">
           <el-tab-pane label="基本资料" name="info">
-            <UserInfo ref="userInfoRef"/>
+            <UserInfo ref="userInfoRef" />
           </el-tab-pane>
           <el-tab-pane label="修改密码" name="password">
             <Password />
@@ -73,21 +72,21 @@
 </template>
 
 <script setup lang="ts" name="ProfileIndex">
-import {onBeforeMount, onMounted, ref, watch} from 'vue'
-import {useUserStore} from '@/store/modules/user'
+import { onBeforeMount, onMounted, ref, watch } from 'vue'
+import { useUserStore } from '@/store/modules/user'
 import Password from '@/views/profile/password.vue'
 import UserInfo from '@/views/profile/user-info.vue'
-import {User} from '@element-plus/icons-vue'
-import FileUrlUtils from '@/utils/fileUrlUtils';
+import { User } from '@element-plus/icons-vue'
+import FileUrlUtils from '@/utils/fileUrlUtils'
 
 const userStore = useUserStore()
 const activeName = ref('info')
-const userInfoRef = ref() // 创建 UserInfo 组件的引用
-const showViewer = ref(false) // 控制图片预览器显示
-const avatarUrl = ref('') // 存储头像URL
+const userInfoRef = ref<InstanceType<typeof UserInfo>>()
+const showViewer = ref(false)
+const avatarUrl = ref('')
 
-// 获取头像完整URL
-const getAvatarUrl = async () => {
+/** 获取头像完整 URL */
+async function getAvatarUrl() {
   if (!userStore.user.avatar) {
     return
   }
@@ -106,11 +105,11 @@ watch(() => userStore.user.avatar, () => {
 // 监听标签页变化
 watch(activeName, (newVal) => {
   if (newVal === 'info' && userInfoRef.value) {
-    userInfoRef.value.init() // 切换到基本资料页时调用 init
+    userInfoRef.value.init()
   }
 })
 
-// 确保初始加载时调用
+// 初始加载时调用
 onMounted(() => {
   if (activeName.value === 'info' && userInfoRef.value) {
     userInfoRef.value.init()

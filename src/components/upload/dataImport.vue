@@ -105,12 +105,12 @@
             <div class="result-icon">
               <el-icon><CircleCheckFilled /></el-icon>
             </div>
-            <div class="result-title" >数据导入完成</div>
+            <div class="result-title">数据导入完成</div>
             <div v-if="importResult.message" class="result-message">
               {{ importResult.message }}
             </div>
             <div v-if="!importResult.passed && importResult.errorFileUrl" class="result-error-download">
-              <el-link type="primary" @click="downloadHandle(importResult.errorFileUrl, '错误.xlsx')">下载错误数据</el-link>
+              <el-link type="primary" @click="downloadFile(importResult.errorFileUrl, '错误.xlsx')">下载错误数据</el-link>
             </div>
           </div>
         </div>
@@ -166,12 +166,12 @@
 
         <!-- 表格 -->
         <el-table v-else :data="historyList" border stripe style="width: 100%" max-height="400">
-          <el-table-column prop="createTime" label="导入时间" width="180" align="center"/>
+          <el-table-column prop="createTime" label="导入时间" width="180" align="center" />
           <el-table-column prop="operatorName" label="操作人" width="120" align="center" />
-          <el-table-column prop="remark" label="导入结果" min-width="200" align="center"/>
+          <el-table-column prop="remark" label="导入结果" min-width="200" align="center" />
           <el-table-column prop="errorFileUrl" label="操作" width="160" align="center">
             <template #default="{ row }">
-              <el-link v-if="row.errorFileUrl" type="primary" @click="downloadHandle(row.errorFileUrl, '错误.xlsx')">
+              <el-link v-if="row.errorFileUrl" type="primary" @click="downloadFile(row.errorFileUrl, '错误.xlsx')">
                 下载错误数据
               </el-link>
               <span v-else class="empty-text">-</span>
@@ -187,32 +187,21 @@
 </template>
 
 <script setup lang="ts">
-import { useCrud } from '@/hooks';
-import {ref, computed, reactive} from 'vue'
+import { computed, ref } from 'vue'
 import { ElMessage, UploadRequestOptions } from 'element-plus'
 import { Loading, CircleCheckFilled } from '@element-plus/icons-vue'
 import { useFileUpload } from '@/hooks/useFileUpload'
-import type {DataImportResult} from '@/types/api/common'
+import { useImportExportRecordListApi } from '@/api/sys/import-export-record'
+import type { DataImportResult } from '@/types/api/common'
+import type { SysImportExportRecord } from '@/types/api/sys/import-export-record'
 import request from '@/utils/request'
-import {IHooksOptions} from '@/types/api/common';
-import { useImportExportRecordListApi } from '@/api/sys/importExportRecord'
-import type {ApiResponse} from '@/types/api/common'
 
 // ==================== 类型定义 ====================
-
 
 /** 处理方式选项 */
 interface StrategyOption {
   label: string
   value: string
-}
-
-/** 导入导出记录 VO */
-interface SysImportExportRecordVO {
-  operatorName: string
-  errorFileUrl: string
-  remark: string
-  createTime: string
 }
 
 // ==================== Props ====================
@@ -257,7 +246,7 @@ const props = withDefaults(defineProps<IProps>(), {
   templateUrl: '',
   duplicateFieldsApi: '',
   defaultStrategy: 'skip',
-  businessType: '',
+  businessType: ''
 })
 
 // ==================== Hooks ====================
@@ -270,38 +259,36 @@ const { uploadDataImport } = useFileUpload()
 const strategyOptions: StrategyOption[] = [
   { label: '跳过', value: 'skip' },
   { label: '覆盖系统原有数据', value: 'override' },
-  { label: '更新系统原有数据', value: 'update' },
+  { label: '更新系统原有数据', value: 'update' }
 ]
 
-// 定义不带参数的 emit
+// 定义 emit
 const emit = defineEmits<{
   (e: 'success'): void
   (e: 'error'): void
 }>()
 
-
 // ==================== 响应式 ====================
 
 const fileInputRef = ref<HTMLInputElement>()
-const loading = ref(false)
-const templateDownloading = ref(false)
-const duplicateFieldsLoading = ref(false)
-const dialogVisible = ref(false)
-const currentStep = ref(0) // 0: 上传文件, 1: 导入数据, 2: 导入完成
+const loading = ref<boolean>(false)
+const templateDownloading = ref<boolean>(false)
+const dialogVisible = ref<boolean>(false)
+const currentStep = ref<number>(0) // 0: 上传文件, 1: 导入数据, 3: 导入完成
 const selectedFile = ref<File | null>(null)
-const selectedFileName = ref('')
+const selectedFileName = ref<string>('')
 const duplicateFields = ref<string[]>([])
 const strategy = ref<string>(props.defaultStrategy)
 const importResult = ref<DataImportResult>({
   passed: true,
   errorFileUrl: '',
-  message: '',
+  message: ''
 })
 
 // 历史记录相关
-const historyDialogVisible = ref(false)
-const historyLoading = ref(false)
-const historyList = ref<SysImportExportRecordVO[]>([])
+const historyDialogVisible = ref<boolean>(false)
+const historyLoading = ref<boolean>(false)
+const historyList = ref<SysImportExportRecord[]>([])
 
 const dialogTitle = computed(() => `导入${props.businessName}`)
 
@@ -312,8 +299,10 @@ const acceptStr = computed(() => {
   return props.accept.map(ext => `.${ext}`).join(',')
 })
 
+// ==================== 数据获取 ====================
+
 /** 获取查重字段列表 */
-const fetchDuplicateFields = async () => {
+async function fetchDuplicateFields() {
   if (!props.duplicateFieldsApi) {
     return
   }
@@ -323,33 +312,23 @@ const fetchDuplicateFields = async () => {
     return
   }
 
-  duplicateFieldsLoading.value = true
-
   try {
-    const response = (await request({
+    const response = await request({
       url: props.duplicateFieldsApi,
-      method: 'get',
-    })) as ApiResponse<string[]>
-
-    if (response.code === 0) {
-      duplicateFields.value = response.data || []
-    } else {
-      console.warn('获取查重字段失败:', response.msg || response.message)
-    }
+      method: 'get'
+    })
+    duplicateFields.value = (response as any)?.data || []
   } catch (error) {
     console.error('获取查重字段失败:', error)
-  } finally {
-    duplicateFieldsLoading.value = false
   }
 }
 
 /** 获取历史导入记录列表（不分页，全部展示） */
-const fetchHistoryList = async () => {
+async function fetchHistoryList() {
   historyLoading.value = true
   try {
     const response = await useImportExportRecordListApi(props.businessType)
-    historyList.value = response.data
-
+    historyList.value = response.data || []
   } catch (error) {
     console.error('获取历史记录失败:', error)
     ElMessage.error('获取历史记录失败，请稍后重试')
@@ -358,30 +337,32 @@ const fetchHistoryList = async () => {
   }
 }
 
+// ==================== 弹窗控制 ====================
+
 /** 弹框打开时调用 */
-const handleDialogOpen = () => {
-  // 获取查重字段列表
+function handleDialogOpen() {
   if (props.duplicateFieldsApi) {
     fetchDuplicateFields()
   }
-  // 重置处理方式为默认值
   strategy.value = props.defaultStrategy
 }
 
 /** 打开对话框 */
-const openDialog = () => {
+function openDialog() {
   resetState()
   dialogVisible.value = true
   currentStep.value = 0
 }
 
+// ==================== 文件处理 ====================
+
 /** 触发文件选择 */
-const triggerFileSelect = () => {
+function triggerFileSelect() {
   fileInputRef.value?.click()
 }
 
 /** 文件选择变化 */
-const handleFileChange = (event: Event) => {
+function handleFileChange(event: Event) {
   const input = event.target as HTMLInputElement
   if (input.files && input.files.length > 0) {
     const file = input.files[0]
@@ -395,7 +376,7 @@ const handleFileChange = (event: Event) => {
 }
 
 /** 文件校验 */
-const validateFile = (file: File): boolean => {
+function validateFile(file: File): boolean {
   if (props.accept && props.accept.length > 0) {
     const ext = file.name.split('.').pop()?.toLowerCase()
     if (!props.accept.map(e => e.toLowerCase()).includes(ext || '')) {
@@ -415,8 +396,10 @@ const validateFile = (file: File): boolean => {
   return true
 }
 
+// ==================== 核心操作 ====================
+
 /** 开始导入 */
-const handleStartImport = async () => {
+async function handleStartImport() {
   if (!selectedFile.value) {
     ElMessage.warning('请先选择文件')
     return
@@ -427,7 +410,6 @@ const handleStartImport = async () => {
     return
   }
 
-  // 校验导入地址是否配置
   if (!props.importUrl) {
     ElMessage.error('导入接口地址未配置')
     return
@@ -439,14 +421,14 @@ const handleStartImport = async () => {
     // 构建导入参数，包含 strategy
     const importParams = {
       ...props.importParams,
-      strategy: strategy.value,
+      strategy: strategy.value
     }
 
     importResult.value = await uploadDataImport(
         { file: selectedFile.value } as UploadRequestOptions,
         {
           importUrl: props.importUrl,
-          data: importParams,
+          data: importParams
         }
     )
     currentStep.value = 3
@@ -456,7 +438,7 @@ const handleStartImport = async () => {
     importResult.value = {
       passed: false,
       errorFileUrl: '',
-      message: err.message,
+      message: err.message
     }
     currentStep.value = 3
     ElMessage.error(err.message)
@@ -469,7 +451,7 @@ const handleStartImport = async () => {
 /**
  * 下载模板 - 使用 request 处理文件流下载
  */
-const handleDownloadTemplate = async () => {
+async function handleDownloadTemplate() {
   if (!props.templateUrl) {
     ElMessage.warning('模板下载地址未配置')
     return
@@ -485,7 +467,7 @@ const handleDownloadTemplate = async () => {
     const response = await request({
       url: props.templateUrl,
       method: 'get',
-      responseType: 'blob',
+      responseType: 'blob'
     })
 
     const blob = (response as any).data || response
@@ -510,18 +492,7 @@ const handleDownloadTemplate = async () => {
       }
     }
 
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = fileName
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url)
-    }, 100)
-
+    saveBlob(blob, fileName)
     ElMessage.success('模板下载成功')
   } catch (error) {
     ElMessage.error('模板下载失败，请稍后重试')
@@ -530,36 +501,63 @@ const handleDownloadTemplate = async () => {
   }
 }
 
+/** 保存 Blob 到本地 */
+function saveBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  }, 100)
+}
+
+/** 下载文件（错误数据） */
+function downloadFile(url?: string, fileName?: string) {
+  if (!url) {
+    ElMessage.warning('下载地址为空')
+    return
+  }
+  window.open(url, '_blank')
+}
+
+// ==================== 历史记录 ====================
+
 /** 查看历史导入记录 */
-const handleViewHistory = () => {
+function handleViewHistory() {
   historyDialogVisible.value = true
   fetchHistoryList()
 }
 
 /** 关闭历史记录对话框 */
-const handleHistoryDialogClose = () => {
+function handleHistoryDialogClose() {
   historyList.value = []
 }
 
+// ==================== 弹窗操作 ====================
+
 /** 取消 */
-const handleCancel = () => {
+function handleCancel() {
   dialogVisible.value = false
   resetState()
 }
 
 /** 确定（关闭弹框） */
-const handleConfirm = () => {
+function handleConfirm() {
   dialogVisible.value = false
   resetState()
 }
 
 /** 关闭对话框 */
-const handleDialogClose = () => {
+function handleDialogClose() {
   resetState()
 }
 
 /** 重置状态 */
-const resetState = () => {
+function resetState() {
   currentStep.value = 0
   selectedFile.value = null
   selectedFileName.value = ''
@@ -568,7 +566,7 @@ const resetState = () => {
   importResult.value = {
     passed: true,
     errorFileUrl: '',
-    message: '',
+    message: ''
   }
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
@@ -586,17 +584,8 @@ defineExpose({
     loading.value = false
   },
   refreshDuplicateFields: fetchDuplicateFields,
-  refreshHistory: fetchHistoryList,
+  refreshHistory: fetchHistoryList
 })
-
-const state: IHooksOptions = reactive({});
-/**
- * 使用 useCrud 钩子
- */
-const {
-  downloadHandle,
-} = useCrud(state);
-
 </script>
 
 <style lang="scss" scoped>
@@ -812,5 +801,3 @@ const {
 }
 
 </style>
-
-

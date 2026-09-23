@@ -1,108 +1,136 @@
 <template>
-	<el-dialog v-model="visible" title="导入数据库表" :close-on-click-modal="false" draggable>
-		<el-form ref="dataFormRef" :model="dataForm">
-			<el-row>
-				<el-col :span="8">
-					<el-form-item label="数据源" prop="datasourceId">
-						<el-select v-model="dataForm.datasourceId" style="width: 100%" placeholder="请选择数据源" @change="getTableList">
-							<el-option label="默认数据源" value="0"></el-option>
-							<el-option v-for="ds in dataForm.datasourceList" :key="ds.id" :label="ds.connName" :value="ds.id"> </el-option>
-						</el-select>
-					</el-form-item>
-				</el-col>
-				<el-col :span="16">
-					<el-form-item label="表名" prop="tableName" :label-width="80">
-						<!-- 监听tableName值，如果发生变化，则调用getTableList -->
-						<el-input v-model="dataForm.tableName" placeholder="请输入表名" style="width: 100%" @input="getTableList"></el-input>
-					</el-form-item>
-				</el-col>
-			</el-row>
-			<el-table :data="dataForm.tableList" border style="width: 100%" :max-height="400" @selection-change="selectionChangeHandle">
-				<el-table-column type="selection" header-align="center" align="center" width="60"></el-table-column>
-				<el-table-column prop="tableName" label="表名" header-align="center" align="center"></el-table-column>
-				<el-table-column prop="tableComment" label="表说明" header-align="center" align="center"></el-table-column>
-			</el-table>
-		</el-form>
-		<template #footer>
-			<el-button @click="visible = false">取消</el-button>
-			<el-button type="primary" @click="submitHandle()">确定</el-button>
-		</template>
-	</el-dialog>
+  <el-dialog v-model="dialogVisible" title="导入数据库表" :close-on-click-modal="false" draggable @closed="handleClosed">
+    <el-form ref="importRef" :model="form">
+      <el-row>
+        <el-col :span="8">
+          <el-form-item label="数据源" prop="datasourceId">
+            <el-select v-model="form.datasourceId" style="width: 100%" placeholder="请选择数据源" @change="getTableList">
+              <el-option label="默认数据源" :value="0"></el-option>
+              <el-option
+                  v-for="ds in datasourceList"
+                  :key="ds.id"
+                  :label="ds.connName"
+                  :value="ds.id!"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="16">
+          <el-form-item label="表名" prop="tableName" :label-width="80">
+            <el-input
+                v-model="form.tableName"
+                placeholder="请输入表名"
+                style="width: 100%"
+                @input="getTableList"
+            ></el-input>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-table
+          :data="tableList"
+          border
+          style="width: 100%"
+          :max-height="400"
+          @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" header-align="center" align="center" width="60"></el-table-column>
+        <el-table-column prop="tableName" label="表名" header-align="center" align="center"></el-table-column>
+        <el-table-column prop="tableComment" label="表说明" header-align="center" align="center"></el-table-column>
+      </el-table>
+    </el-form>
+    <template #footer>
+      <el-button @click="cancel">取消</el-button>
+      <el-button type="primary" @click="submitForm()">确定</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus/es'
-import { useDataSourceListApi } from '@/api/gen/datasource'
-import { useTableImportSubmitApi } from '@/api/gen/table'
-import { useDataSourceTableListApi } from '@/api/gen/datasource'
+import { useDataSourceListApi, useDataSourceTableListApi } from '@/api/gen/datasource'
+import { importTables } from '@/api/gen/table'
+import { Datasource } from '@/types/api/gen/datasource'
+import { TableEntity } from '@/types/api/gen/table-entity'
 
-const emit = defineEmits(['refreshDataList'])
+const emit = defineEmits<{ (e: 'success'): void }>()
+const importRef = ref()
+const dialogVisible = ref<boolean>(false)
 
-const visible = ref(false)
-const dataFormRef = ref()
+const datasourceList = ref<Datasource[]>([])
+const tableList = ref<TableEntity[]>([])
+const selectedTables = ref<string[]>([])
 
-const dataForm = reactive({
-	id: '',
-	tableNameListSelections: [] as any,
-	datasourceId: '',
-	tableName: '',
-	datasourceList: [] as any,
-	tableList: [] as any
+const form = ref<{
+  datasourceId: number
+  tableName: string
+}>({
+  datasourceId: 0,
+  tableName: ''
 })
 
-// 多选
-const selectionChangeHandle = (selections: any[]) => {
-	dataForm.tableNameListSelections = selections.map((item: any) => item['tableName'])
+/** 打开弹窗 */
+function open() {
+  reset()
+  dialogVisible.value = true
+  getDataSourceList()
 }
 
-const init = () => {
-	visible.value = true
-	dataForm.id = ''
-
-	// 重置表单数据
-	if (dataFormRef.value) {
-		dataFormRef.value.resetFields()
-	}
-
-	dataForm.tableList = []
-
-	getDataSourceList()
+/** 关闭弹窗 */
+function cancel() {
+  dialogVisible.value = false
 }
 
-const getDataSourceList = () => {
-	useDataSourceListApi().then(res => {
-		dataForm.datasourceList = res.data
-	})
+/** 弹窗关闭后重置 */
+function handleClosed() {
+  reset()
 }
 
-const getTableList = () => {
-	useDataSourceTableListApi(dataForm.datasourceId, dataForm.tableName).then(res => {
-		dataForm.tableList = res.data
-	})
-}
-
-// 表单提交
-const submitHandle = () => {
-	const tableNameList = dataForm.tableNameListSelections ? dataForm.tableNameListSelections : []
-	if (tableNameList.length === 0) {
-		ElMessage.warning('请选择记录')
-		return
-	}
-
-	useTableImportSubmitApi(dataForm.datasourceId, tableNameList).then(() => {
-		ElMessage.success({
-			message: '操作成功',
-			duration: 500,
-			onClose: () => {
-				visible.value = false
-				emit('refreshDataList')
-			}
-		})
-	})
-}
-
+/** 对外暴露方法 */
 defineExpose({
-	init
+  open
 })
+
+/** 表单重置 */
+function reset() {
+  form.value = {
+    datasourceId: 0,
+    tableName: ''
+  }
+  tableList.value = []
+  selectedTables.value = []
+}
+
+/** 多选 */
+function handleSelectionChange(selection: TableEntity[]) {
+  selectedTables.value = selection.map(item => item.tableName!)
+}
+
+/** 获取数据源列表 */
+function getDataSourceList() {
+  useDataSourceListApi().then(res => {
+    datasourceList.value = res.data || []
+  })
+}
+
+/** 获取表列表 */
+function getTableList() {
+  useDataSourceTableListApi(form.value.datasourceId, form.value.tableName).then(res => {
+    tableList.value = res.data || []
+  })
+}
+
+/** 提交按钮 */
+function submitForm() {
+  if (selectedTables.value.length === 0) {
+    ElMessage.warning('请选择记录')
+    return
+  }
+
+  importTables(form.value.datasourceId, selectedTables.value).then(() => {
+    ElMessage.success('操作成功')
+    dialogVisible.value = false
+    emit('success')
+  })
+}
 </script>

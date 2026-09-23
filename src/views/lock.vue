@@ -27,12 +27,13 @@
               placeholder="请输入登录密码"
               class="lock-input"
               autocomplete="off"
-              :disabled="loading"/>
+              :disabled="loading"
+          />
           <button type="submit" class="unlock-btn" :disabled="loading || !password">
             <span v-if="!loading">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
               </svg>
             </span>
             <span v-else class="loading-dot">···</span>
@@ -52,19 +53,35 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="Lock">
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import useLockStore from '@/store/modules/lock'
 import { useUserStore } from '@/store/modules/user'
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import FileUrlUtils from '@/utils/fileUrlUtils'
 import { unlockScreen } from '@/api/auth'
+
+/** 粒子 */
+interface Particle {
+  /** x 坐标 */
+  x: number
+  /** y 坐标 */
+  y: number
+  /** x 方向速度 */
+  dx: number
+  /** y 方向速度 */
+  dy: number
+  /** 半径 */
+  r: number
+  /** 透明度 */
+  alpha: number
+}
 
 const router = useRouter()
 const userStore = useUserStore()
 const lockStore = useLockStore()
 
-const previewUrl = ref('')
+const previewUrl = ref<string>('')
 const password = ref<string>('')
 const loading = ref<boolean>(false)
 const errorMsg = ref<string>('')
@@ -74,24 +91,20 @@ const currentDate = ref<string>('')
 const passwordInput = ref<HTMLInputElement | null>(null)
 const particleCanvas = ref<HTMLCanvasElement | null>(null)
 
-let timer: any = null
-let animationId: any = null
+/** 时钟计时器 */
+let timer: ReturnType<typeof setInterval> | null = null
+/** 粒子动画 ID */
+let animationId: number | null = null
+/** 粒子列表 */
 let particles: Particle[] = []
 
-interface Particle {
-  x: number
-  y: number
-  dx: number
-  dy: number
-  r: number
-  alpha: number
+/** 获取头像完整 URL */
+async function fetchPreviewUrl() {
+  previewUrl.value = await FileUrlUtils.getFullUrl(userStore.user.avatar || '')
 }
 
-const fetchPreviewUrl = async () => {
-  previewUrl.value = await FileUrlUtils.getFullUrl(userStore.user.avatar)
-}
-
-const startClock = () => {
+/** 启动时钟 */
+function startClock() {
   const update = () => {
     const now = new Date()
     const pad = (n: number) => String(n).padStart(2, '0')
@@ -103,7 +116,8 @@ const startClock = () => {
   timer = setInterval(update, 1000)
 }
 
-const handleUnlock = async () => {
+/** 解锁屏幕 */
+async function handleUnlock() {
   if (!password.value) {
     showError('请输入密码')
     return
@@ -115,8 +129,8 @@ const handleUnlock = async () => {
     const lockPath = lockStore.lockPath
     lockStore.unlockScreen()
     router.replace(lockPath)
-  } catch (err: any) {
-    const msg = err.message || err.toString()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
     showError(msg)
     password.value = ''
     nextTick(() => passwordInput.value?.focus())
@@ -125,7 +139,8 @@ const handleUnlock = async () => {
   }
 }
 
-const showError = (msg: string) => {
+/** 显示错误提示（带抖动动画） */
+function showError(msg: string) {
   errorMsg.value = msg
   isShaking.value = true
   setTimeout(() => {
@@ -133,25 +148,29 @@ const showError = (msg: string) => {
   }, 600)
 }
 
-const goLogin = () => {
+/** 退出重新登录 */
+function goLogin() {
   lockStore.unlockScreen()
   userStore.logoutAction().then(() => {
     location.reload()
   })
 }
 
-const hexToRgba = (hex: string, alpha: number): string => {
+/** hex 转 rgba */
+function hexToRgba(hex: string, alpha: number): string {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
-const initParticles = () => {
+/** 初始化粒子背景 */
+function initParticles() {
   const canvas = particleCanvas.value
   if (!canvas) return
   const ctx = canvas.getContext('2d')
   if (!ctx) return
+
   const resize = () => {
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
@@ -167,13 +186,12 @@ const initParticles = () => {
     r: Math.random() * 4 + 1,
     dx: (Math.random() - 0.5) * 0.7,
     dy: (Math.random() - 0.5) * 0.7,
-    alpha: Math.random() * 0.5 + 0.2,
+    alpha: Math.random() * 0.5 + 0.2
   }))
 
   const draw = () => {
-    if (!ctx) return
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    particles.forEach((p) => {
+    particles.forEach(p => {
       ctx.beginPath()
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
       ctx.fillStyle = hexToRgba(colorHex, p.alpha)
@@ -189,8 +207,8 @@ const initParticles = () => {
     })
     for (let i = 0; i < particles.length; i++) {
       for (let j = i + 1; j < particles.length; j++) {
-        const a = particles[i],
-            b = particles[j]
+        const a = particles[i]
+        const b = particles[j]
         const dist = Math.hypot(a.x - b.x, a.y - b.y)
         if (dist < 150) {
           ctx.beginPath()
@@ -216,8 +234,14 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  clearInterval(timer)
-  cancelAnimationFrame(animationId)
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+  if (animationId !== null) {
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
 })
 </script>
 

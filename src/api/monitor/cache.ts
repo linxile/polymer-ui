@@ -1,34 +1,63 @@
+// @/api/monitor/cache.ts
 import service from '@/utils/request'
+import type { Cache, RedisInfo } from '@/types/api/monitor/cache'
+import type { Result } from '@/types/api/common'
 
-export const useCacheInfoApi = () => {
-	return service.get('/monitor/cache/info')
-}
-// 查询缓存名称列表
-export const listCacheName = () =>  {
-	return service.get('/monitor/cache/getCacheName')
-}
+/**
+ * API 基础路径
+ */
+const BASE_URL = '/monitor/cache';
 
-// 查询缓存键名列表
-export const listCacheKey = (cacheName: string) => {
-	return service.get('/monitor/cache/getCacheKeys/' + cacheName)
-}
-
-// 查询缓存内容
-export const getCacheValue = (cacheName: string, cacheKey: string) => {
-	return service.get('/monitor/cache/getCacheValue/' + cacheName + '/' + cacheKey)
+/**
+ * Redis 详情
+ */
+export const useCacheInfoApi = (): Promise<Result<RedisInfo>> => {
+	return service.get<Result<RedisInfo>>(`${BASE_URL}/info`)
 }
 
-// 清理指定名称缓存
-export const clearCacheName = (cacheName: string) => {
-	return service.delete('/monitor/cache/clearCacheName/' + cacheName)
+/**
+ * 查询缓存名称列表
+ */
+export const listCacheName = (): Promise<Result<Cache[]>> => {
+	return service.get<Result<Cache[]>>(`${BASE_URL}/getCacheName`)
 }
 
-// 清理指定键名缓存
-export const clearCacheKey = (cacheKey: string) => {
-	return service.delete('/monitor/cache/clearCacheKey/' + cacheKey)
+/**
+ * 查询缓存键名列表
+ * @param cacheName 缓存名称
+ */
+export const listCacheKey = (cacheName: string): Promise<Result<string[]>> => {
+	return service.get<Result<string[]>>(`${BASE_URL}/getCacheKeys/${cacheName}`)
 }
 
-// 清理全部缓存
-export const clearCacheAll = () => {
-	return service.delete('/monitor/cache/clearCacheAll')
+/**
+ * 查询缓存内容
+ * @param cacheName 缓存名称
+ * @param cacheKey 缓存键名
+ */
+export const getCacheValue = (cacheName: string, cacheKey: string): Promise<Result<Cache>> => {
+	return service.get<Result<Cache>>(`${BASE_URL}/getCacheValue/${cacheName}/${cacheKey}`)
+}
+
+/**
+ * 清理指定名称缓存
+ * @param cacheName 缓存名称
+ */
+export const clearCacheName = (cacheName: string): Promise<Result<string>> => {
+	return service.delete<Result<string>>(`${BASE_URL}/clearCacheName/${cacheName}`)
+}
+
+/**
+ * 清理指定键名缓存
+ * @param cacheKey 缓存键名
+ */
+export const clearCacheKey = (cacheKey: string): Promise<Result<string>> => {
+	return service.delete<Result<string>>(`${BASE_URL}/clearCacheKey/${cacheKey}`)
+}
+
+/**
+ * 清理全部缓存
+ */
+export const clearCacheAll = (): Promise<Result<string>> => {
+	return service.delete<Result<string>>(`${BASE_URL}/clearCacheAll`)
 }

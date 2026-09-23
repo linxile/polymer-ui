@@ -1,12 +1,14 @@
 <template>
-	<div>
-		<svg-icon icon="icon-ellipsis-v" @click="themeSettingsHandle"></svg-icon>
-	</div>
+  <div>
+    <svg-icon icon="icon-ellipsis-v" @click="themeSettingsHandle"></svg-icon>
+  </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="ThemeSettings">
 import emits from '@/utils/emits'
-const themeSettingsHandle = () => {
-	emits.emit('openThemeSettings')
+
+/** 打开主题设置抽屉 */
+function themeSettingsHandle() {
+  emits.emit('openThemeSettings')
 }
 </script>

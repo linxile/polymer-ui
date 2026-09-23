@@ -14,47 +14,49 @@
   </el-select>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="FastSelect">
 import { computed } from 'vue'
 import { getDictDataList } from '@/utils/tool'
 import { useAppStore } from '@/store/modules/app'
+import type { SysDictDataItem } from '@/types/api/sys/dict-type'
 
-const appStore = useAppStore()
-const emit = defineEmits(['update:modelValue'])
-const props = defineProps({
-  modelValue: {
-    type: [Number, String],
-    required: true
-  },
-  dictType: {
-    type: String,
-    required: true
-  },
-  clearable: {
-    type: Boolean,
-    required: false,
-    default: () => false
-  },
-  placeholder: {
-    type: String,
-    required: false,
-    default: () => ''
-  }
+interface IProps {
+  /** 绑定值 */
+  modelValue?: number | string
+  /** 字典类型 */
+  dictType: string
+  /** 是否可清空 */
+  clearable?: boolean
+  /** 占位提示 */
+  placeholder?: string
+}
+
+const props = withDefaults(defineProps<IProps>(), {
+  modelValue: undefined,
+  clearable: false,
+  placeholder: ''
 })
 
-// 将传入的值转为字符串类型，确保与 dictValue 匹配
-const stringValue = computed(() => {
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const appStore = useAppStore()
+
+/** 字典数据列表（响应式，字典变化时自动更新） */
+const dataList = computed<SysDictDataItem[]>(() => {
+  return getDictDataList(appStore.dictList, props.dictType)
+})
+
+/** 将传入的值转为字符串类型，确保与 dictValue 匹配 */
+const stringValue = computed<string>(() => {
   return props.modelValue !== undefined && props.modelValue !== null
       ? String(props.modelValue)
       : ''
 })
 
-const handleChange = (value: any) => {
-  emit('update:modelValue', value)
+/** 值变化 */
+function handleChange(value: string | number | boolean | undefined) {
+  emit('update:modelValue', String(value ?? ''))
 }
-
-// 改为 computed，确保字典数据异步加载后能响应式更新
-const dataList = computed(() => {
-  return getDictDataList(appStore.dictList, props.dictType)
-})
 </script>

@@ -1,17 +1,27 @@
 <template>
-  <!-- 卡片容器，提供阴影和边框效果 -->
   <el-card>
-
-    <!-- 内联表单，用于查询条件输入 -->
-    <el-form :inline="true" :model="state.queryForm" @keyup.enter="getDataList()">
+    <el-form :model="queryParams" ref="queryRef" :inline="true">
       <el-form-item>
-        <el-input v-model="state.queryForm.operatorName" placeholder="操作人姓名" clearable></el-input>
+        <el-input
+            v-model="queryParams.operatorName"
+            placeholder="操作人姓名"
+            clearable
+        ></el-input>
       </el-form-item>
       <el-form-item>
-        <el-input v-model="state.queryForm.businessType" placeholder="对象" clearable></el-input>
+        <el-input
+            v-model="queryParams.businessType"
+            placeholder="对象"
+            clearable
+        ></el-input>
       </el-form-item>
       <el-form-item>
-        <el-select v-model="state.queryForm.operationType" style="width: 100px" placeholder="操作类型">
+        <el-select
+            v-model="queryParams.operationType"
+            style="width: 100px"
+            placeholder="操作类型"
+            clearable
+        >
           <el-option label="导入" value="import"></el-option>
           <el-option label="导出" value="export"></el-option>
         </el-select>
@@ -22,16 +32,23 @@
             type="datetimerange"
             start-placeholder="开始操作时间"
             end-placeholder="结束操作时间"
-            value-format="YYYY-MM-DD HH:mm:ss" @change="onChangeCreateTime">
+            value-format="YYYY-MM-DD HH:mm:ss"
+            @change="onChangeCreateTime"
+        >
         </el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button @click="getDataList()">查询</el-button>
+        <el-button type="primary" @click="handleQuery">搜索</el-button>
+        <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
-    <!-- 数据表格 -->
-    <el-table v-loading="state.dataListLoading" :data="state.dataList" border style="width: 100%" @selection-change="selectionChangeHandle">
+    <el-table
+        v-loading="loading"
+        :data="recordList"
+        border
+        style="width: 100%"
+    >
       <el-table-column prop="operatorName" label="操作人姓名" header-align="center" align="center" width="100"></el-table-column>
       <el-table-column prop="businessType" label="对象" header-align="center" align="center" width="60"></el-table-column>
       <el-table-column prop="operationType" label="操作类型" header-align="center" align="center" width="100">
@@ -60,25 +77,22 @@
       <el-table-column prop="remark" label="备注" header-align="center" align="center" min-width="380"></el-table-column>
     </el-table>
 
-    <!-- 分页组件 -->
-    <el-pagination
-        :current-page="state.pageNo"
-        :page-sizes="state.pageSizes"
-        :page-size="state.pageSize"
-        :total="state.total"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="sizeChangeHandle"
-        @current-change="currentChangeHandle">
-    </el-pagination>
-
+    <!-- 分页 -->
+    <pagination
+        v-show="total > 0"
+        :total="total"
+        v-model:page="queryParams.pageNo"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getDataList"
+    />
   </el-card>
 </template>
 
 <script setup lang="ts" name="SystemImportExportRecordIndex">
-// 导入必要的库和组件
-import {useCrud} from '@/hooks' // 封装的CRUD钩子
-import {reactive, ref} from 'vue'
-import {IHooksOptions} from '@/types/api/common' // 类型定义
+import { onMounted, ref } from 'vue'
+import { SysImportExportRecord, SysImportExportRecordQuery } from "@/types/api/sys/import-export-record"
+import { getImportExportRecordPage } from "@/api/sys/import-export-record"
+import { useFileDownload } from '@/hooks/useFileDownload'
 
 /**
  * 操作类型映射
@@ -97,43 +111,67 @@ const importStrategyMap: Record<string, string> = {
   'override': '覆盖',
 }
 
-/**
- * 状态管理
- * 使用封装的useCrud钩子管理列表页的CRUD操作
- */
-const state: IHooksOptions = reactive({
-  dataListUrl: '/system/importExportRecord/page',  // 数据列表接口
-  deleteUrl: '/system/importExportRecord',         // 删除接口
-  queryForm: {  // 查询表单数据
-    operatorName: '',
-    businessType: '',
-    operationType: '',
-    beginCreateTime: '',
-    endCreateTime: ''
-  }
+const queryRef = ref()
+const createTimeRef = ref<string[]>([])
+
+const recordList = ref<SysImportExportRecord[]>([])
+const loading = ref<boolean>(true)
+const total = ref<number>(0)
+const fileDownload = useFileDownload()
+
+const queryParams = ref<SysImportExportRecordQuery>({
+  pageNo: 1,
+  pageSize: 10,
+  operatorName: undefined,
+  businessType: undefined,
+  operationType: undefined,
+  beginCreateTime: undefined,
+  endCreateTime: undefined
 })
 
-const createTimeRef = ref<string[]>([])
-/**
- * 创建时间范围选择变更处理
- * @param {any} value - 日期选择器返回的值数组
- */
-const onChangeCreateTime = (value: any) => {
+/** 查询导入导出记录列表 */
+function getDataList() {
+  loading.value = true
+  getImportExportRecordPage(queryParams.value).then(response => {
+    recordList.value = response.data?.list || []
+    total.value = response.data?.total || 0
+    loading.value = false
+  })
+}
+
+/** 搜索按钮操作 */
+function handleQuery() {
+  queryParams.value.pageNo = 1
+  getDataList()
+}
+
+/** 重置按钮操作 */
+function resetQuery() {
+  queryRef.value.resetFields()
+  createTimeRef.value = []
+  queryParams.value.beginCreateTime = undefined
+  queryParams.value.endCreateTime = undefined
+  handleQuery()
+}
+
+/** 创建时间范围选择变更处理 */
+function onChangeCreateTime(value: string[] | null) {
   if (value && value.length === 2) {
-    state.queryForm.beginCreateTime = value[0];
-    state.queryForm.endCreateTime = value[1];
-  }else {
-    state.queryForm.beginCreateTime = '';
-    state.queryForm.endCreateTime = '';
+    queryParams.value.beginCreateTime = value[0]
+    queryParams.value.endCreateTime = value[1]
+  } else {
+    queryParams.value.beginCreateTime = undefined
+    queryParams.value.endCreateTime = undefined
   }
 }
 
-// 从useCrud钩子中解构出CRUD操作方法
-const {
-  getDataList,              // 获取数据列表
-  selectionChangeHandle,    // 多选变化处理
-  sizeChangeHandle,         // 分页大小变化处理
-  currentChangeHandle,      // 当前页码变化处理
-  downloadHandle,
-} = useCrud(state)
+/** 文件下载 */
+function downloadHandle(url: string, filename: string) {
+  fileDownload.download(url, filename)
+}
+
+// 页面初始化
+onMounted(() => {
+  getDataList()
+})
 </script>

@@ -15,42 +15,42 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts" name="WangEditor">
 import '@wangeditor/editor/dist/css/style.css'
-import { onBeforeUnmount, shallowRef, watch } from 'vue'
+import { onBeforeUnmount, shallowRef } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { IDomEditor, IEditorConfig } from '@wangeditor/editor'
-import FileUrlUtils from '@/utils/fileUrlUtils';
-import {ElMessage} from 'element-plus';
-import { useFileUpload } from '@/hooks/useFileUpload';
+import type { IDomEditor, IEditorConfig } from '@wangeditor/editor'
+import { ElMessage } from 'element-plus'
+import FileUrlUtils from '@/utils/fileUrlUtils'
+import { useFileUpload } from '@/hooks/useFileUpload'
 
-const props = defineProps({
-  modelValue: {
-    type: String,
-    required: true,
-    default: ''
-  },
-  mode: {
-    type: String,
-    default: 'default'
-  },
-  placeholder: {
-    type: String,
-    default: ''
-  },
-  style: {
-    type: String,
-    default: 'height: 400px;'
-  },
-  disabled: {
-    type: Boolean,
-    default: false
-  }
+interface IProps {
+  /** 绑定值（HTML 字符串） */
+  modelValue: string
+  /** 编辑器模式 */
+  mode?: string
+  /** 占位提示 */
+  placeholder?: string
+  /** 编辑器样式 */
+  style?: string
+  /** 是否禁用 */
+  disabled?: boolean
+}
+
+const props = withDefaults(defineProps<IProps>(), {
+  mode: 'default',
+  placeholder: '',
+  style: 'height: 400px;',
+  disabled: false
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
 // 在 setup 中调用 useFileUpload
 const { uploadAttachmentSimplify } = useFileUpload()
+
 // 编辑器实例，使用 undefined 而不是 null
 const editorRef = shallowRef<IDomEditor>()
 
@@ -67,7 +67,7 @@ const editorConfig: Partial<IEditorConfig> = {
         try {
           // 直接传递 File 对象
           const result = await uploadAttachmentSimplify(file)
-          // 获取完整URL
+          // 获取完整 URL
           const url = await FileUrlUtils.getFullUrl(result.url)
           insertFn(url, result.name, result.url)
         } catch (error) {
@@ -76,6 +76,17 @@ const editorConfig: Partial<IEditorConfig> = {
       }
     }
   }
+}
+
+/** 编辑器创建完成 */
+function handleCreated(editor: IDomEditor) {
+  editorRef.value = editor
+}
+
+/** 编辑器 change 事件触发 */
+function handleChange(editor: IDomEditor) {
+  const html = editor.getHtml()
+  emit('update:modelValue', html || '')
 }
 
 // 组件销毁时，也及时销毁编辑器
@@ -87,22 +98,4 @@ onBeforeUnmount(() => {
   editor.destroy()
   editorRef.value = undefined
 })
-
-const handleCreated = (editor: IDomEditor) => {
-  editorRef.value = editor
-}
-
-// 编辑器change事件触发
-const handleChange = (editor: IDomEditor) => {
-  const html = editor.getHtml()
-  emit('update:modelValue', html || '')
-}
-
-// 监听外部 modelValue 变化，更新编辑器内容
-watch(() => props.modelValue, (newValue) => {
-  const editor = editorRef.value
-  if (editor && newValue !== editor.getHtml()) {
-    editor.setHtml(newValue || '')
-  }
-}, { immediate: false })
 </script>

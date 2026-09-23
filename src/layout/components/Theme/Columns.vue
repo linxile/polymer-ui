@@ -1,58 +1,61 @@
 <template>
-	<el-container class="layout-container layout-columns">
-		<el-aside class="layout-sidebar aside-expend" :class="sidebarClass">
-			<div class="sidebar-logo">
-				<el-avatar src="./favicon.ico"></el-avatar>
-			</div>
-			<el-scrollbar>
-				<div class="columns-menu">
-					<router-link to="/home">
-						<div class="columns-menu-item" :class="{ active: menuPath === '/home' }">
-							<svg-icon icon="icon-home"></svg-icon>
-							<span class="title">首页</span>
-						</div>
-					</router-link>
-					<div
-						v-for="menu in routerStore.menuRoutes"
-						:key="menu.path"
-						class="columns-menu-item"
-						:class="{ active: menuPath === menu.path }"
-						@click="handleMenu(menu)"
-					>
-						<svg-icon :icon="menu.meta?.icon"></svg-icon>
-						<span class="title">{{ menu.meta?.title }}</span>
-					</div>
-				</div>
-			</el-scrollbar>
-		</el-aside>
-		<el-container>
-			<el-header class="layout-header" :style="layoutHeaderHeight">
-				<div class="navbar-container" :class="headerClass">
-					<NavbarLeft />
-					<NavbarRight />
-				</div>
-			</el-header>
-			<div class="layout-main">
-				<div v-if="subMenus.length > 0 && appStore.sidebarOpened" class="columns-sub-menu">
-					<el-menu
-						:default-active="defaultActive"
-						:collapse="!appStore.sidebarOpened"
-						:unique-opened="appStore.theme.uniqueOpened"
-						background-color="transparent"
-						:collapse-transition="false"
-						mode="vertical"
-					>
-						<menu-item v-for="menu in subMenus" :key="menu.path" :menu="menu"></menu-item>
-					</el-menu>
-				</div>
-				<Tabs v-if="theme.isTabsView" />
-				<Main />
-			</div>
-		</el-container>
-	</el-container>
+  <el-container class="layout-container layout-columns">
+    <el-aside class="layout-sidebar aside-expend" :class="sidebarClass">
+      <div class="sidebar-logo">
+        <el-avatar src="./favicon.ico"></el-avatar>
+      </div>
+      <el-scrollbar>
+        <div class="columns-menu">
+          <router-link to="/home">
+            <div class="columns-menu-item" :class="{ active: menuPath === '/home' }">
+              <svg-icon icon="icon-home"></svg-icon>
+              <span class="title">首页</span>
+            </div>
+          </router-link>
+          <div
+              v-for="menu in routerStore.menuRoutes"
+              :key="menu.path"
+              class="columns-menu-item"
+              :class="{ active: menuPath === menu.path }"
+              @click="handleMenu(menu)"
+          >
+            <svg-icon :icon="menu.meta?.icon"></svg-icon>
+            <span class="title">{{ menu.meta?.title }}</span>
+          </div>
+        </div>
+      </el-scrollbar>
+    </el-aside>
+    <el-container>
+      <el-header class="layout-header" :style="layoutHeaderHeight">
+        <div class="navbar-container" :class="headerClass">
+          <NavbarLeft />
+          <NavbarRight />
+        </div>
+      </el-header>
+      <div class="layout-main">
+        <div v-if="subMenus.length > 0 && appStore.sidebarOpened" class="columns-sub-menu">
+          <el-menu
+              :default-active="defaultActive"
+              :collapse="!appStore.sidebarOpened"
+              :unique-opened="appStore.theme.uniqueOpened"
+              background-color="transparent"
+              :collapse-transition="false"
+              mode="vertical"
+          >
+            <menu-item v-for="menu in subMenus" :key="menu.path" :menu="menu"></menu-item>
+          </el-menu>
+        </div>
+        <Tabs v-if="theme.isTabsView" />
+        <Main />
+      </div>
+    </el-container>
+  </el-container>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" name="LayoutColumns">
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import { useRouterStore } from '@/store/modules/router'
 import { useAppStore } from '@/store/modules/app'
 import NavbarLeft from '@/layout/components/Navbar/NavbarLeft.vue'
@@ -60,92 +63,101 @@ import NavbarRight from '@/layout/components/Navbar/NavbarRight.vue'
 import Main from '@/layout/components/Main/index.vue'
 import Tabs from '@/layout/components/Tabs/index.vue'
 import MenuItem from '@/layout/components/Menu/MenuItem.vue'
-import { computed, onMounted, ref, watch } from 'vue'
-import { RouteRecordRaw, useRoute, useRouter } from 'vue-router'
+import type { ITheme } from '@/store/theme/interface'
 
 const routerStore = useRouterStore()
 const appStore = useAppStore()
 const route = useRoute()
 const router = useRouter()
 
-const defaultActive = computed(() => {
-	const { path } = route
-	return path
-})
+/** 当前激活菜单 */
+const defaultActive = computed<string>(() => route.path)
 
-const subMenus = ref<any[]>([])
-watch(route, () => {
-	subMenus.value = []
-	initSubMenu()
-})
+/** 子菜单列表 */
+const subMenus = ref<RouteRecordRaw[]>([])
 
-onMounted(() => {
-	initSubMenu()
-})
-
+/** 当前一级菜单路径 */
 const menuPath = ref<string>('')
-const initSubMenu = () => {
-	menuPath.value = defaultActive.value
-	for (const menu of routerStore.menuRoutes) {
-		// 是否包含当前路由
-		const exist = findRoute(menu.children as RouteRecordRaw[])
-		if (exist) {
-			subMenus.value = menu.children as RouteRecordRaw[]
 
-			menuPath.value = menu.path
-			break
-		}
-	}
-}
+/** 主题配置 */
+const theme = computed<ITheme>(() => appStore.theme)
 
-const findRoute = (menus: RouteRecordRaw[]): boolean => {
-	for (const menu of menus) {
-		// 有子菜单的情况
-		if (menu.children && menu.children.length > 0) {
-			if (findRoute(menu.children)) {
-				return true
-			}
-		} else if (menu.path === defaultActive.value) {
-			return true
-		}
-	}
-	return false
-}
+/** 顶栏样式类 */
+const headerClass = computed<string>(() => (appStore.theme.headerStyle === 'theme' ? 'header-theme' : ''))
 
-const handleMenu = (menu: any) => {
-	if (menu.children && menu.children.length > 0) {
-		const leafRoute = findLeafRoute(menu.children)
-		router.push(leafRoute.path)
-	} else {
-		router.push(menu.path)
-	}
-}
-
-const findLeafRoute = (menus: RouteRecordRaw[]): any => {
-	for (const menu of menus) {
-		// 有子菜单的情况
-		if (menu.children && menu.children.length > 0) {
-			return findLeafRoute(menu.children)
-		} else {
-			return menu
-		}
-	}
-	return null
-}
-
-const headerClass = computed(() => (appStore.theme.headerStyle === 'theme' ? 'header-theme' : ''))
-
-const sidebarClass = computed(() => {
-	return appStore.theme.sidebarStyle === 'dark' ? 'sidebar-dark' : ''
+/** 侧边栏样式类 */
+const sidebarClass = computed<string>(() => {
+  return appStore.theme.sidebarStyle === 'dark' ? 'sidebar-dark' : ''
 })
 
-const theme = computed(() => appStore.theme)
-const layoutHeaderHeight = computed(() => {
-	if (!theme.value.isTabsView) {
-		return 'height:var(--theme-header-height) !important'
-	} else {
-		return ''
-	}
+/** 顶栏高度样式（未开启 tabs 时固定高度） */
+const layoutHeaderHeight = computed<string>(() => {
+  if (!theme.value.isTabsView) {
+    return 'height:var(--theme-header-height) !important'
+  }
+  return ''
+})
+
+/** 初始化子菜单 */
+function initSubMenu() {
+  subMenus.value = []
+  menuPath.value = defaultActive.value
+  for (const menu of routerStore.menuRoutes) {
+    // 是否包含当前路由
+    const exist = findRoute(menu.children as RouteRecordRaw[])
+    if (exist) {
+      subMenus.value = menu.children as RouteRecordRaw[]
+      menuPath.value = menu.path
+      break
+    }
+  }
+}
+
+/** 递归查找当前路由是否在菜单树中 */
+function findRoute(menus: RouteRecordRaw[]): boolean {
+  for (const menu of menus) {
+    if (menu.children && menu.children.length > 0) {
+      if (findRoute(menu.children as RouteRecordRaw[])) {
+        return true
+      }
+    } else if (menu.path === defaultActive.value) {
+      return true
+    }
+  }
+  return false
+}
+
+/** 点击一级菜单 */
+function handleMenu(menu: RouteRecordRaw) {
+  if (menu.children && menu.children.length > 0) {
+    const leafRoute = findLeafRoute(menu.children as RouteRecordRaw[])
+    if (leafRoute) {
+      router.push(leafRoute.path)
+    }
+  } else {
+    router.push(menu.path)
+  }
+}
+
+/** 递归查找第一个叶子路由 */
+function findLeafRoute(menus: RouteRecordRaw[]): RouteRecordRaw | null {
+  for (const menu of menus) {
+    if (menu.children && menu.children.length > 0) {
+      return findLeafRoute(menu.children as RouteRecordRaw[])
+    }
+    return menu
+  }
+  return null
+}
+
+// 监听路由变化，重新初始化子菜单
+watch(route, () => {
+  initSubMenu()
+})
+
+// 组件挂载时初始化
+onMounted(() => {
+  initSubMenu()
 })
 </script>
 
