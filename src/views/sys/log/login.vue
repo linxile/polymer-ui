@@ -109,7 +109,7 @@
 import { onMounted, ref } from 'vue';
 import { SysLogLogin, SysLogLoginQuery } from "@/types/api/sys/login";
 import { getLogLoginPage } from "@/api/sys/login";
-import {exportFile2} from "@/utils/download";
+import {exportFile} from "@/hooks/useFileDownload";
 
 const queryRef = ref()
 
@@ -151,9 +151,9 @@ function resetQuery() {
 /** 导出按钮操作 */
 function handleExport() {
   console.log('handleExport', queryParams.value)
-  exportFile2("sys/log/login/export", {
-    ...queryParams.value
-  }, `login_${new Date().getTime()}.xlsx`)
+  exportFile("sys/log/login/export",
+      queryParams.value,
+      `login_${new Date().getTime()}.xlsx`)
 }
 
 // 页面初始化

@@ -1,243 +1,220 @@
-// src/hooks/useFileDownload.ts
+import { ElLoading, ElMessage } from 'element-plus'
+import { saveAs } from 'file-saver'
 import service from '@/utils/request'
-import { ElMessage } from 'element-plus'
-import qs from 'qs'
-import FileUrlUtils from '@/utils/fileUrlUtils'
-import { ref } from 'vue'
-import type { Ref } from 'vue'
+import { blobValidate } from '@/utils/polymer'
+import errorCode from '@/utils/errorCode'
 import type { AxiosResponse } from 'axios'
+import FileUrlUtils from "@/utils/fileUrlUtils";
 
-export interface IFileDownloadOptions {
-    /** 导出时的额外参数（会合并到 queryForm） */
-    extraParams?: Record<string, any>
-    /** 默认文件名（不含后缀） */
-    defaultFileName?: string
-    /** 默认文件扩展名 */
-    defaultExt?: string
+/** loading 实例（全局单例） */
+let downloadLoadingInstance: ReturnType<typeof ElLoading.service> | null = null
+
+/**
+ * 开启全局 loading
+ */
+function openLoading(text = '正在下载数据，请稍候'): void {
+    downloadLoadingInstance = ElLoading.service({
+        text,
+        background: 'rgba(0, 0, 0, 0.7)'
+    })
 }
 
 /**
- * 独立的文件下载与导出 Composable
- * 职责：处理所有文件下载、导出相关的逻辑
+ * 关闭全局 loading
  */
-export function useFileDownload(options?: IFileDownloadOptions) {
-    const exportLoading: Ref<boolean> = ref(false)
+function closeLoading(): void {
+    downloadLoadingInstance?.close()
+    downloadLoadingInstance = null
+}
 
-    /**
-     * 从响应头中提取文件名
-     */
-    function getFileNameFromResponse(res: AxiosResponse<Blob>, fallbackName?: string): string {
-        if (fallbackName) {
-            return fallbackName
-        }
+/**
+ * 触发浏览器下载
+ */
+function triggerDownload(data: Blob, fileName: string): void {
+    const link = document.createElement('a')
+    link.style.display = 'none'
+    link.download = fileName
 
-        const contentDisposition = res.headers['content-disposition'] as string | undefined
-        if (contentDisposition) {
-            // 优先匹配 filename* (支持 UTF-8 编码)
-            const matchStar = contentDisposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i)
-            if (matchStar) {
-                return decodeURIComponent(matchStar[1])
-            }
-            // 匹配普通 filename
-            const match = contentDisposition.match(/filename=([^;]+)/i)
-            if (match) {
-                return decodeURIComponent(match[1])
-            }
-        }
+    link.href = URL.createObjectURL(data)
 
-        // 使用默认文件名
-        const ext = options?.defaultExt || 'xlsx'
-        return `${options?.defaultFileName || '文件'}_${new Date().getTime()}.${ext}`
-    }
+    document.body.appendChild(link)
+    link.click()
 
-    /**
-     * 创建 Blob 副本，避免原始 Blob 被消费
-     */
-    function createBlobCopy(blob: Blob): Blob {
-        return blob.slice(0, blob.size, blob.type)
-    }
+    setTimeout(() => {
+        URL.revokeObjectURL(link.href)
+        document.body.removeChild(link)
+    }, 100)
+}
 
-    /**
-     * 触发浏览器下载
-     */
-    function triggerDownload(data: Blob, fileName: string, fileType?: string): void {
-        const link = document.createElement('a')
-        link.style.display = 'none'
-        link.download = fileName
+/**
+ * 检查响应是否为错误响应（JSON 格式）
+ */
+async function checkErrorResponse(res: AxiosResponse<Blob>): Promise<{ isError: boolean; blobCopy?: Blob }> {
+    const contentType = (res.headers['content-type'] as string) || ''
 
-        const blob = new Blob([data], {
-            type: data.type || fileType || 'application/octet-stream'
-        })
-        link.href = URL.createObjectURL(blob)
-
-        document.body.appendChild(link)
-        link.click()
-
-        // 延迟清理资源
-        setTimeout(() => {
-            URL.revokeObjectURL(link.href)
-            document.body.removeChild(link)
-        }, 100)
-    }
-
-    /**
-     * 检查响应是否为错误响应（JSON 格式）
-     */
-    async function checkErrorResponse(res: AxiosResponse<Blob>): Promise<{ isError: boolean; blobCopy?: Blob }> {
-        const contentType = (res.headers['content-type'] as string) || ''
-
-        // 如果是 JSON，说明是错误响应
-        if (contentType.includes('application/json')) {
+    // 如果是 JSON，说明是错误响应
+    if (contentType.includes('application/json')) {
+        try {
+            const text = await res.data.text()
             try {
-                const text = await res.data.text()
+                const errorData = JSON.parse(text)
+                ElMessage.error(errorData.msg || errorData.message || '操作失败')
+            } catch {
+                ElMessage.error('操作失败：' + text.substring(0, 100))
+            }
+        } catch {
+            ElMessage.error('操作失败：无法读取响应数据')
+        }
+        return { isError: true }
+    }
+
+    const blobCopy = res.data.slice(0, res.data.size, res.data.type)
+
+    if (!blobCopy || blobCopy.size === 0) {
+        ElMessage.error('文件为空，请检查查询条件')
+        return { isError: true }
+    }
+
+    return { isError: false, blobCopy }
+}
+
+/**
+ * 统一的下载错误处理
+ */
+async function handleDownloadError(err: any): Promise<void> {
+    if (err.response) {
+        const { status, data } = err.response
+
+        if (data instanceof Blob) {
+            try {
+                const text = await data.text()
                 try {
                     const errorData = JSON.parse(text)
-                    ElMessage.error(errorData.msg || errorData.message || '操作失败')
+                    ElMessage.error(errorData.msg || errorData.message || `请求失败 (HTTP ${status})`)
                 } catch {
-                    ElMessage.error('操作失败：' + text.substring(0, 100))
+                    ElMessage.error(`请求失败：${text.substring(0, 100)}`)
                 }
             } catch {
-                ElMessage.error('操作失败：无法读取响应数据')
+                ElMessage.error(`请求失败 (HTTP ${status})`)
             }
-            return { isError: true }
-        }
-
-        // 创建 Blob 副本，供后续下载使用
-        const blobCopy = createBlobCopy(res.data)
-
-        // 检查文件是否为空
-        if (!blobCopy || blobCopy.size === 0) {
-            ElMessage.error('文件为空，请检查查询条件')
-            return { isError: true }
-        }
-
-        return { isError: false, blobCopy }
-    }
-
-    /**
-     * 统一的下载错误处理
-     */
-    async function handleDownloadError(err: any): Promise<void> {
-        if (err.response) {
-            const { status, data } = err.response
-
-            if (data instanceof Blob) {
-                try {
-                    const text = await data.text()
-                    try {
-                        const errorData = JSON.parse(text)
-                        ElMessage.error(errorData.msg || errorData.message || `请求失败 (HTTP ${status})`)
-                    } catch {
-                        ElMessage.error(`请求失败：${text.substring(0, 100)}`)
-                    }
-                } catch {
-                    ElMessage.error(`请求失败 (HTTP ${status})`)
-                }
-            } else {
-                ElMessage.error(err.response.data?.msg || err.response.data?.message || err.message || '请求失败')
-            }
-        } else if (err.request) {
-            ElMessage.error('网络异常，请检查网络连接')
         } else {
-            ElMessage.error(err.message || '请求失败')
+            ElMessage.error(err.response.data?.msg || err.response.data?.message || err.message || '请求失败')
         }
+    } else if (err.request) {
+        ElMessage.error('网络异常，请检查网络连接')
+    } else {
+        ElMessage.error(err.message || '请求失败')
     }
+}
 
-    /**
-     * 通用下载方法（支持任意 URL）
-     */
-    async function download(url: string, filename?: string, method: string = 'GET'): Promise<void> {
-        try {
-            const fullUrl = await FileUrlUtils.getFullUrl(url)
-
-            const res = await service({
-                responseType: 'blob',
-                url: fullUrl,
-                method
-            }) as AxiosResponse<Blob>
-
-            // 检查错误响应，同时获取 Blob 副本
-            const { isError, blobCopy } = await checkErrorResponse(res)
-            if (isError) {
-                return
-            }
-
-            // 使用 Blob 副本进行下载
-            const fileName = getFileNameFromResponse(res, filename)
-            triggerDownload(blobCopy!, fileName)
-
-            ElMessage.success('下载成功')
-        } catch (err: any) {
-            await handleDownloadError(err)
-        }
+/**
+ * 处理非 Blob 响应（错误响应）
+ */
+async function handleNonBlobResponse(res: AxiosResponse<Blob>): Promise<void> {
+    const resText = await res.data.text()
+    try {
+        const rspObj = JSON.parse(resText)
+        const errMsg = errorCode[rspObj.code] || rspObj.msg || errorCode['default']
+        ElMessage.error(errMsg)
+    } catch {
+        ElMessage.error('导出失败：' + resText.substring(0, 100))
     }
+}
 
-    /**
-     * 导出方法（专用于列表数据导出，带查询参数）
-     */
-    async function exportFile(
-        exportUrl: string,
-        queryForm: Record<string, any>,
-        filename?: string
-    ): Promise<void> {
-        if (exportLoading.value) {
+/**
+ * 通用下载方法（GET）
+ * @param url 下载地址
+ * @param filename 文件名
+ */
+export async function download(url: string, filename: string): Promise<void> {
+    try {
+        const fullUrl = await FileUrlUtils.getFullUrl(url)
+        const res = await service.get(fullUrl, {
+            responseType: 'blob'
+        }) as AxiosResponse<Blob>
+
+        const { isError, blobCopy } = await checkErrorResponse(res)
+        if (isError) {
             return
         }
 
-        if (!exportUrl) {
-            ElMessage.error('导出接口地址未配置')
-            return
-        }
+        triggerDownload(blobCopy!, filename)
 
-        try {
-            exportLoading.value = true
+        ElMessage.success('下载成功')
+    } catch (err: any) {
+        await handleDownloadError(err)
+    }
+}
 
-            // 合并额外参数
-            const baseParams = { ...queryForm, ...(options?.extraParams || {}) }
+/**
+ * 列表数据导出（POST JSON 传参，带 loading）
+ * @param url 导出接口地址
+ * @param params 查询参数
+ * @param filename 导出文件名
+ */
+export async function exportFile(
+    url: string,
+    params: Record<string, any>,
+    filename: string
+): Promise<void> {
+    if (!url) {
+        ElMessage.error('导出接口地址未配置')
+        return
+    }
 
-            // 过滤空值
-            const filteredParams = Object.keys(baseParams).reduce<Record<string, any>>((acc, key) => {
-                const value = baseParams[key]
-                if (value !== undefined && value !== null && value !== '') {
-                    acc[key] = value
-                }
-                return acc
-            }, {})
+    openLoading()
 
-            // 构建完整 URL
-            const queryString = Object.keys(filteredParams).length
-                ? qs.stringify(filteredParams, { addQueryPrefix: true })
-                : ''
-            const fullUrl = exportUrl + queryString
+    try {
+        const res = await service.post(url, params, {
+            headers: { 'Content-Type': 'application/json' },
+            responseType: 'blob'
+        }) as AxiosResponse<Blob>
 
-            // 发起导出请求
-            const res = await service({
-                responseType: 'blob',
-                url: fullUrl,
-                method: 'GET'
-            }) as AxiosResponse<Blob>
-
-            // 检查错误响应，同时获取 Blob 副本
-            const { isError, blobCopy } = await checkErrorResponse(res)
-            if (isError) {
-                return
-            }
-
-            // 使用 Blob 副本进行下载
-            const fileName = getFileNameFromResponse(res, filename)
-            triggerDownload(blobCopy!, fileName)
-
+        if (blobValidate(res.data)) {
+            const blob = new Blob([res.data])
+            saveAs(blob, filename)
             ElMessage.success('导出成功')
-        } catch (err: any) {
-            await handleDownloadError(err)
-        } finally {
-            exportLoading.value = false
+        } else {
+            await handleNonBlobResponse(res)
         }
+    } catch (err: any) {
+        await handleDownloadError(err)
+    } finally {
+        closeLoading()
+    }
+}
+
+/**
+ * 模板下载（GET query 传参，无 loading）
+ * @param url 模板下载地址
+ * @param filename 文件名
+ * @param params 查询参数（可传可不传）
+ */
+export async function exportTemplate(
+    url: string,
+    filename: string,
+    params?: Record<string, any>
+): Promise<void> {
+    if (!url) {
+        ElMessage.error('模板下载地址未配置')
+        return
     }
 
-    return {
-        exportLoading,
-        download,
-        exportFile
+    try {
+        const res = await service.get(url, {
+            params,
+            responseType: 'blob'
+        }) as AxiosResponse<Blob>
+
+        const { isError, blobCopy } = await checkErrorResponse(res)
+        if (isError) {
+            return
+        }
+
+        triggerDownload(blobCopy!, filename)
+
+        ElMessage.success('模板下载成功')
+    } catch (err: any) {
+        await handleDownloadError(err)
     }
 }

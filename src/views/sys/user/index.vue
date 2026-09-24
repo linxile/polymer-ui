@@ -87,7 +87,7 @@
   import {SysUser, SysUserQuery} from "@/types/api/sys/user";
   import {deleteUsers, getUserPage} from "@/api/sys/user";
   import {ElMessage, ElMessageBox} from "element-plus";
-  import {exportFile2} from "@/utils/download";
+  import {exportFile} from "@/hooks/useFileDownload";
 
   const queryRef = ref()
   const tableRef = ref();
@@ -159,10 +159,9 @@
 
   /** 导出按钮操作 */
   function handleExport() {
-    console.log('handleExport', queryParams.value)
-    exportFile2("sys/user/export", {
-      ...queryParams.value
-    }, `user_${new Date().getTime()}.xlsx`)
+    exportFile("sys/user/export",
+        queryParams.value,
+        `user_${new Date().getTime()}.xlsx`)
   }
 
 

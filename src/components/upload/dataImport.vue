@@ -195,6 +195,7 @@ import { useImportExportRecordListApi } from '@/api/sys/import-export-record'
 import type { DataImportResult } from '@/types/api/common'
 import type { SysImportExportRecord } from '@/types/api/sys/import-export-record'
 import request from '@/utils/request'
+import {download, exportTemplate} from "@/hooks/useFileDownload";
 
 // ==================== 类型定义 ====================
 
@@ -449,79 +450,27 @@ async function handleStartImport() {
 }
 
 /**
- * 下载模板 - 使用 request 处理文件流下载
+ * 下载模板
  */
 async function handleDownloadTemplate() {
-  if (!props.templateUrl) {
-    ElMessage.warning('模板下载地址未配置')
-    return
-  }
-
   if (templateDownloading.value) {
     return
   }
-
   templateDownloading.value = true
-
   try {
-    const response = await request({
-      url: props.templateUrl,
-      method: 'get',
-      responseType: 'blob'
-    })
-
-    const blob = (response as any).data || response
-
-    if (blob.type === 'application/json') {
-      const text = await blob.text()
-      try {
-        const errorData = JSON.parse(text)
-        ElMessage.error(errorData.msg || errorData.message || '模板下载失败')
-        return
-      } catch {
-        // 不是有效的 JSON，继续下载
-      }
-    }
-
-    const contentDisposition = (response as any).headers?.['content-disposition']
-    let fileName = `${props.businessName}导入模板.xlsx`
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-      if (match && match[1]) {
-        fileName = decodeURIComponent(match[1].replace(/['"]/g, ''))
-      }
-    }
-
-    saveBlob(blob, fileName)
-    ElMessage.success('模板下载成功')
+    const fileName = `${props.businessName}导入模板.xlsx`
+    await exportTemplate(props.templateUrl, fileName)
   } catch (error) {
-    ElMessage.error('模板下载失败，请稍后重试')
+    console.error('模板下载失败:', error)
   } finally {
     templateDownloading.value = false
   }
 }
 
-/** 保存 Blob 到本地 */
-function saveBlob(blob: Blob, fileName: string) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  setTimeout(() => {
-    URL.revokeObjectURL(url)
-  }, 100)
-}
 
 /** 下载文件（错误数据） */
-function downloadFile(url?: string, fileName?: string) {
-  if (!url) {
-    ElMessage.warning('下载地址为空')
-    return
-  }
-  window.open(url, '_blank')
+function downloadFile(url: string, fileName: string) {
+  download(url, fileName);
 }
 
 // ==================== 历史记录 ====================

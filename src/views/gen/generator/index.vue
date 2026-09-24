@@ -69,9 +69,8 @@ import Generator from './generator.vue'
 import { TableEntity } from '@/types/api/gen/table-entity'
 import { GenQuery } from '@/types/api/gen/base-class'
 import { deleteTables, getTablePage, syncTable } from '@/api/gen/table'
-import { getDownloadUrl } from '@/api/gen/generator'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {exportFile2} from "@/utils/download";
+import {exportFile} from "@/hooks/useFileDownload";
 
 const queryRef = ref()
 const tableRef = ref()
@@ -148,7 +147,7 @@ function downloadBatchHandle() {
     ElMessage.warning('请选择生成代码的表')
     return
   }
-  exportFile2("gen/generator/download",
+  exportFile("gen/generator/download",
       ids.value,
       `generator_${new Date().getTime()}.zip`)
 }

@@ -88,7 +88,7 @@ import DataImport from '@/components/upload/dataImport.vue'
 import { DemoMultipleFiles, DemoMultipleFilesQuery } from '@/types/api/demo/multiple-files'
 import { deleteMultipleFiles, getMultipleFilesPage } from '@/api/demo/multiple-files'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {exportFile2} from "@/utils/download";
+import {exportFile} from "@/hooks/useFileDownload";
 
 const queryRef = ref()
 const tableRef = ref()
@@ -163,9 +163,9 @@ function handleDelete(row?: DemoMultipleFiles) {
 
 /** 导出按钮操作 */
 function handleExport() {
-  exportFile2("demo/multipleFiles/export", {
-    ...queryParams.value
-  }, `user_${new Date().getTime()}.xlsx`)
+  exportFile("demo/multipleFiles/export",
+      queryParams.value,
+      `user_${new Date().getTime()}.xlsx`)
 }
 
 /** 导入成功回调 */
