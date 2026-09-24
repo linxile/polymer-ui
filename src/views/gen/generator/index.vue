@@ -13,13 +13,13 @@
         <el-button @click="resetQuery">重置</el-button>
       </el-form-item>
       <el-form-item>
-        <el-button v-auth="'gen:table:import'" type="primary" @click="importHandle">导入</el-button>
+        <el-button type="primary" @click="importHandle">导入</el-button>
       </el-form-item>
       <el-form-item>
-        <el-button v-auth="'gen:table:code'" type="success" :disabled="multiple" @click="downloadBatchHandle">生成代码</el-button>
+        <el-button type="success" :disabled="multiple" @click="downloadBatchHandle">生成代码</el-button>
       </el-form-item>
       <el-form-item>
-        <el-button v-auth="'gen:table:delete'" type="danger" :disabled="multiple" @click="handleDelete">删除</el-button>
+        <el-button type="danger" :disabled="multiple" @click="handleDelete">删除</el-button>
       </el-form-item>
     </el-form>
     <el-table
@@ -36,11 +36,11 @@
       <el-table-column prop="className" label="类名" header-align="center" align="center"></el-table-column>
       <el-table-column label="操作" fixed="right" header-align="center" align="center" width="300">
         <template #default="scope">
-          <el-button v-auth="'gen:table:update'" type="primary" link @click="editHandle(scope.row)">编辑</el-button>
-          <el-button v-auth="'gen:table:preview'" type="primary" link @click="previewHandle(scope.row)">预览</el-button>
-          <el-button v-auth="'gen:table:code'" type="primary" link @click="generatorHandle(scope.row)">生成代码</el-button>
-          <el-button v-auth="'gen:table:delete'" type="primary" link @click="handleDelete(scope.row)">删除</el-button>
-          <el-button v-auth="'gen:table:sync'" type="primary" link @click="syncHandle(scope.row)">同步</el-button>
+          <el-button type="primary" link @click="editHandle(scope.row)">编辑</el-button>
+          <el-button type="primary" link @click="previewHandle(scope.row)">预览</el-button>
+          <el-button type="primary" link @click="generatorHandle(scope.row)">生成代码</el-button>
+          <el-button type="primary" link @click="handleDelete(scope.row)">删除</el-button>
+          <el-button type="primary" link @click="syncHandle(scope.row)">同步</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -71,6 +71,7 @@ import { GenQuery } from '@/types/api/gen/base-class'
 import { deleteTables, getTablePage, syncTable } from '@/api/gen/table'
 import { getDownloadUrl } from '@/api/gen/generator'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {exportFile2} from "@/utils/download";
 
 const queryRef = ref()
 const tableRef = ref()
@@ -147,7 +148,9 @@ function downloadBatchHandle() {
     ElMessage.warning('请选择生成代码的表')
     return
   }
-  window.open(getDownloadUrl(ids.value), '_blank')
+  exportFile2("gen/generator/download",
+      ids.value,
+      `generator_${new Date().getTime()}.zip`)
 }
 
 /** 删除按钮操作 */

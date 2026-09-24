@@ -1,18 +1,19 @@
-
 import { ElMessage, ElLoading } from 'element-plus'
 import service from "@/utils/request";
-import {blobValidate, tansParams} from "@/utils/polymer";
+import { blobValidate } from "@/utils/polymer";
 import { saveAs } from 'file-saver';
 import errorCode from "@/utils/errorCode";
 
 let downloadLoadingInstance: ReturnType<typeof ElLoading.service>
 
-// 通用下载方法
+// 通用下载方法（JSON 传参）
 export function exportFile2(url: string, params: any, filename: string, config?: any) {
-  downloadLoadingInstance = ElLoading.service({ text: "正在下载数据，请稍候", background: "rgba(0, 0, 0, 0.7)", })
+  downloadLoadingInstance = ElLoading.service({
+    text: "正在下载数据，请稍候",
+    background: "rgba(0, 0, 0, 0.7)",
+  })
   return service.post(url, params, {
-    transformRequest: [(params: any) => { return tansParams(params) }],
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: { 'Content-Type': 'application/json' },
     responseType: 'blob',
     ...config
   }).then(async (res: any) => {
