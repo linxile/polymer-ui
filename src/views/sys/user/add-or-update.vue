@@ -84,10 +84,13 @@ import {ref, computed, onMounted} from 'vue'
   import { usePostListApi} from '@/api/sys/post'
 	import { useRoleListApi } from '@/api/sys/role'
 	import { useCityListApi } from '@/api/sys/city'
-  import type {AttachmentUploadResult} from '@/types/api/common'
+  import type { SysFileUpload } from '@/types/api/storage/file'
   import UploadComponent from '@/components/upload/index.vue';
   import {SysUser} from "@/types/api/sys/user";
   import {SysPost} from "@/types/api/sys/post";
+import type {SysCity} from "@/types/api/sys/city";
+import type {SysRole} from "@/types/api/sys/role";
+import type {SysDept} from "@/types/api/sys/dept";
 
   const emit = defineEmits<{(e: 'success'): void }>()
   const userRef = ref()
@@ -99,10 +102,10 @@ import {ref, computed, onMounted} from 'vue'
 
 
 	const postList = ref<SysPost[]>([])
-	const roleList = ref<any[]>([])
-	const deptList = ref([])
+	const roleList = ref<SysRole[]>([])
+	const deptList = ref<SysDept[]>([])
   // 城市选项数据
-  const cityOptions = ref<any[]>([])
+  const cityOptions = ref<SysCity[]>([])
   // 级联选择器配置
   const cascaderProps = {
     value: 'areaCode',  // 使用城市编码作为值
@@ -235,9 +238,9 @@ import {ref, computed, onMounted} from 'vue'
 
   /**
    * 上传成功回调
-   * 直接使用 AttachmentUploadResult 保存附件记录
+   * 直接使用 SysFileUpload 保存附件记录
    */
-  function handleUploadSuccess(result: AttachmentUploadResult) {
+  function handleUploadSuccess(result: SysFileUpload) {
     form.value.avatar = result.url;
     // 需重置上传组件的 loading 状态
     uploadRef.value?.resetUploadStatus();
@@ -258,21 +261,21 @@ import {ref, computed, onMounted} from 'vue'
 	// 获取角色列表
   function getRoleList() {
 		return useRoleListApi().then(res => {
-			roleList.value = res.data
+			roleList.value = res.data || []
 		})
 	}
 
 	// 获取部门列表
   function getDeptList() {
 		return useDeptListApi().then(res => {
-			deptList.value = res.data
+			deptList.value = res.data || []
 		})
 	}
 
   // 获取城市列表
   function getCityList() {
     useCityListApi().then(res => {
-      cityOptions.value = res.data
+      cityOptions.value = res.data || []
     }).catch(() => {
       cityOptions.value = []
     })

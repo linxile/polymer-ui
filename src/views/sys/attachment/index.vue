@@ -130,9 +130,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { UploadProps } from 'element-plus'
 import { deleteAttachments, getAttachmentPage, submitAttachment } from '@/api/sys/attachment'
 import type { SysAttachment, SysAttachmentQuery } from '@/types/api/sys/attachment'
-import type { AttachmentUploadResult } from '@/types/api/common'
+import type { SysFileUpload } from '@/types/api/storage/file'
 import Upload from '@/components/upload/index.vue'
-import {useFileDownload} from "@/hooks/useFileDownload";
+import {download} from "@/utils/useFileDownload";
 
 const queryRef = ref()
 const tableRef = ref()
@@ -142,7 +142,6 @@ const loading = ref<boolean>(true)
 const ids = ref<number[]>([])
 const multiple = ref<boolean>(true)
 const total = ref<number>(0)
-const fileDownload = useFileDownload()
 
 const queryParams = ref<SysAttachmentQuery>({
   pageNo: 1,
@@ -183,7 +182,7 @@ function handleSelectionChange(selection: SysAttachment[]) {
 }
 
 /** 上传成功回调 */
-function handleUploadSuccess(result: AttachmentUploadResult): void {
+function handleUploadSuccess(result: SysFileUpload): void {
   // 保存附件记录到后端
   submitAttachment(result as any)
       .then(() => {
@@ -231,7 +230,7 @@ function handleDelete(row?: SysAttachment) {
 
 /** 文件下载 */
 function downloadHandle(url: string, filename: string) {
-  fileDownload.download(url, filename)
+  download(url, filename)
 }
 
 // 页面初始化

@@ -87,7 +87,7 @@
   import {SysUser, SysUserQuery} from "@/types/api/sys/user";
   import {deleteUsers, getUserPage} from "@/api/sys/user";
   import {ElMessage, ElMessageBox} from "element-plus";
-  import {exportFile} from "@/hooks/useFileDownload";
+  import {exportFile} from "@/utils/useFileDownload";
 
   const queryRef = ref()
   const tableRef = ref();

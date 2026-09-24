@@ -190,12 +190,12 @@
 import { computed, ref } from 'vue'
 import { ElMessage, UploadRequestOptions } from 'element-plus'
 import { Loading, CircleCheckFilled } from '@element-plus/icons-vue'
-import { useFileUpload } from '@/hooks/useFileUpload'
+import { uploadDataImport } from '@/utils/useFileUpload'
 import { useImportExportRecordListApi } from '@/api/sys/import-export-record'
 import type { DataImportResult } from '@/types/api/common'
 import type { SysImportExportRecord } from '@/types/api/sys/import-export-record'
 import request from '@/utils/request'
-import {download, exportTemplate} from "@/hooks/useFileDownload";
+import {download, exportTemplate} from "@/utils/useFileDownload";
 
 // ==================== 类型定义 ====================
 
@@ -249,10 +249,6 @@ const props = withDefaults(defineProps<IProps>(), {
   defaultStrategy: 'skip',
   businessType: ''
 })
-
-// ==================== Hooks ====================
-
-const { uploadDataImport } = useFileUpload()
 
 // ==================== 常量 ====================
 
@@ -427,10 +423,8 @@ async function handleStartImport() {
 
     importResult.value = await uploadDataImport(
         { file: selectedFile.value } as UploadRequestOptions,
-        {
-          importUrl: props.importUrl,
-          data: importParams
-        }
+        props.importUrl,
+        importParams
     )
     currentStep.value = 3
     emit('success')

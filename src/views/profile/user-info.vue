@@ -50,8 +50,8 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
 import { useCityTreeApi } from '@/api/sys/city'
 import UploadComponent from '@/components/upload/index.vue'
-import type { AttachmentUploadResult } from '@/types/api/common'
-import {SysUser, SysUserBase} from '@/types/api/sys/user'
+import type { SysFileUpload } from '@/types/api/storage/file'
+import {SysUserBase} from '@/types/api/sys/user'
 
 const userStore = useUserStore()
 const uploadRef = ref<InstanceType<typeof UploadComponent>>()
@@ -106,7 +106,7 @@ const avatarList = computed({
 })
 
 /** 上传成功回调 */
-function handleUploadSuccess(result: AttachmentUploadResult): void {
+function handleUploadSuccess(result: SysFileUpload): void {
   form.value.avatar = result.url
   uploadRef.value?.resetUploadStatus()
 }

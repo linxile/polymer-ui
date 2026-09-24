@@ -22,7 +22,7 @@ import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor, IEditorConfig } from '@wangeditor/editor'
 import { ElMessage } from 'element-plus'
 import FileUrlUtils from '@/utils/fileUrlUtils'
-import { useFileUpload } from '@/hooks/useFileUpload'
+import {uploadAttachmentSimplify} from '@/utils/useFileUpload'
 
 interface IProps {
   /** 绑定值（HTML 字符串） */
@@ -48,9 +48,6 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
 }>()
 
-// 在 setup 中调用 useFileUpload
-const { uploadAttachmentSimplify } = useFileUpload()
-
 // 编辑器实例，使用 undefined 而不是 null
 const editorRef = shallowRef<IDomEditor>()
 
@@ -68,8 +65,8 @@ const editorConfig: Partial<IEditorConfig> = {
           // 直接传递 File 对象
           const result = await uploadAttachmentSimplify(file)
           // 获取完整 URL
-          const url = await FileUrlUtils.getFullUrl(result.url)
-          insertFn(url, result.name, result.url)
+          const url = await FileUrlUtils.getFullUrl(result.url || '')
+          insertFn(url, result.name || '', result.url || '')
         } catch (error) {
           ElMessage.error('图片上传失败，请重试')
         }

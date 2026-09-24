@@ -70,7 +70,7 @@ import { TableEntity } from '@/types/api/gen/table-entity'
 import { GenQuery } from '@/types/api/gen/base-class'
 import { deleteTables, getTablePage, syncTable } from '@/api/gen/table'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {exportFile} from "@/hooks/useFileDownload";
+import {exportFile} from "@/utils/useFileDownload";
 
 const queryRef = ref()
 const tableRef = ref()

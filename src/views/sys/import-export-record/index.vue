@@ -92,7 +92,7 @@
 import { onMounted, ref } from 'vue'
 import { SysImportExportRecord, SysImportExportRecordQuery } from "@/types/api/sys/import-export-record"
 import { getImportExportRecordPage } from "@/api/sys/import-export-record"
-import { useFileDownload } from '@/hooks/useFileDownload'
+import { download } from '@/utils/useFileDownload'
 
 /**
  * 操作类型映射
@@ -117,7 +117,6 @@ const createTimeRef = ref<string[]>([])
 const recordList = ref<SysImportExportRecord[]>([])
 const loading = ref<boolean>(true)
 const total = ref<number>(0)
-const fileDownload = useFileDownload()
 
 const queryParams = ref<SysImportExportRecordQuery>({
   pageNo: 1,
@@ -167,7 +166,7 @@ function onChangeCreateTime(value: string[] | null) {
 
 /** 文件下载 */
 function downloadHandle(url: string, filename: string) {
-  fileDownload.download(url, filename)
+  download(url, filename)
 }
 
 // 页面初始化

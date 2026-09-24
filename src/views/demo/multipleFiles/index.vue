@@ -88,7 +88,7 @@ import DataImport from '@/components/upload/dataImport.vue'
 import { DemoMultipleFiles, DemoMultipleFilesQuery } from '@/types/api/demo/multiple-files'
 import { deleteMultipleFiles, getMultipleFilesPage } from '@/api/demo/multiple-files'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import {exportFile} from "@/hooks/useFileDownload";
+import {exportFile} from "@/utils/useFileDownload";
 
 const queryRef = ref()
 const tableRef = ref()

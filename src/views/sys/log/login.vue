@@ -109,7 +109,7 @@
 import { onMounted, ref } from 'vue';
 import { SysLogLogin, SysLogLoginQuery } from "@/types/api/sys/login";
 import { getLogLoginPage } from "@/api/sys/login";
-import {exportFile} from "@/hooks/useFileDownload";
+import {exportFile} from "@/utils/useFileDownload";
 
 const queryRef = ref()
 

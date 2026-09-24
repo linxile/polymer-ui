@@ -99,9 +99,9 @@ import { computed, reactive, ref, watch } from 'vue'
 import { Plus, View, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadProps, UploadRequestOptions } from 'element-plus'
-import { useFileUpload } from '@/hooks/useFileUpload'
+import { uploadAttachment } from '@/utils/useFileUpload'
 import FileUrlUtils from '@/utils/fileUrlUtils'
-import type { AttachmentUploadResult } from '@/types/api/common'
+import type { SysFileUpload } from '@/types/api/storage/file'
 
 // ==================== 类型定义 ====================
 
@@ -150,13 +150,9 @@ const props = withDefaults(defineProps<IProps>(), {
 const emit = defineEmits<{
   (e: 'update:fileList', value: FileItem[]): void
   (e: 'update-file', value: FileItem[]): void
-  (e: 'success', result: AttachmentUploadResult): void
+  (e: 'success', result: SysFileUpload): void
   (e: 'error', error: Error): void
 }>()
-
-// ==================== Hooks ====================
-
-const { uploadAttachment } = useFileUpload()
 
 // ==================== 响应式状态 ====================
 
@@ -267,7 +263,7 @@ async function uploadAttachmentWithLoading(options: UploadRequestOptions) {
 }
 
 /** 上传成功 */
-function onSuccess(result: AttachmentUploadResult) {
+function onSuccess(result: SysFileUpload) {
   uploadLoading.value = false
 
   if (!result || !result.url) {
