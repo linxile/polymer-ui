@@ -29,7 +29,7 @@
       <el-table-column prop="leaderName" label="负责人" header-align="center" align="center"></el-table-column>
       <el-table-column prop="sort" label="排序" header-align="center" align="center"></el-table-column>
       <el-table-column prop="createTime" label="创建时间" header-align="center" align="center"></el-table-column>
-      <el-table-column label="操作" fixed="right" header-align="center" align="center" width="160">
+      <el-table-column label="操作" fixed="right" header-align="center" align="center">
         <template #default="scope">
           <el-button
               v-auth="'sys:dept:save'"
