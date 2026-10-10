@@ -20,7 +20,6 @@ import FastTableColumn from '@/components/fast-table-column/index.vue'
 import FastRadioGroup from '@/components/fast-radio-group/index.vue'
 import FastSelect from '@/components/fast-select/index.vue'
 import FastUser from '@/components/fast-user/index.vue'
-import CodeMirror from '@/components/code-mirror/index.vue'
 import Pagination from '@/components/pagination/index.vue'
 
 const app = createApp(App)
@@ -30,7 +29,6 @@ app.component("fast-table-column", FastTableColumn)
 app.component("fast-radio-group", FastRadioGroup)
 app.component("fast-select", FastSelect)
 app.component("fast-user", FastUser)
-app.component("code-mirror", CodeMirror)
 app.component("svg-icon", SvgIcon)
 app.component('pagination', Pagination)
 

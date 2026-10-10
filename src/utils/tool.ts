@@ -1,6 +1,5 @@
 import constant from '@/utils/constant'
 import { useAppStore } from '@/store/modules/app'
-import { AES, lib, enc, mode, pad } from 'crypto-js'
 import type { SysDict, SysDictDataItem } from '@/types/api/sys/dict-type'
 
 /**
@@ -129,37 +128,4 @@ export function getDictLabelList(dictType: string, dictValue: string | number | 
 export function getDictDataList(dictList: SysDict[], dictType: string): SysDictDataItem[] {
 	const type = dictList.find(element => element.dictType === dictType)
 	return type?.dataList ?? []
-}
-
-// ==================== AES 加解密 ====================
-
-/** 加密密钥（32 位） */
-const ENCRYPT_KEY = 'polymerlowcode16'
-
-/**
- * AES 解密
- * @param ciphertext Base64 密文
- */
-export function decrypt(ciphertext: string): string {
-	const cipherParams = lib.CipherParams.create({
-		ciphertext: enc.Base64.parse(ciphertext)
-	})
-	const decrypted = AES.decrypt(cipherParams, enc.Utf8.parse(ENCRYPT_KEY), {
-		mode: mode.ECB,
-		padding: pad.Pkcs7
-	})
-	return decrypted.toString(enc.Utf8)
-}
-
-/**
- * AES 加密
- * @param plaintext 明文
- */
-export function encrypt(plaintext: string): string {
-	const message = enc.Utf8.parse(plaintext)
-	const encrypted = AES.encrypt(message, enc.Utf8.parse(ENCRYPT_KEY), {
-		mode: mode.ECB,
-		padding: pad.Pkcs7
-	})
-	return encrypted.toString()
 }

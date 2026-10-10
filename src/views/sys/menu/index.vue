@@ -25,7 +25,7 @@
         border
         style="width: 100%"
     >
-      <el-table-column prop="name" label="名称" header-align="center" min-width="150"></el-table-column>
+      <el-table-column prop="name" label="名称" header-align="center"></el-table-column>
       <el-table-column prop="icon" label="图标" header-align="center" align="center">
         <template #default="scope">
           <svg-icon :icon="scope.row.icon || 'default-icon'"></svg-icon>
@@ -46,9 +46,9 @@
         </template>
       </el-table-column>
       <el-table-column prop="sort" label="排序" header-align="center" align="center"></el-table-column>
-      <el-table-column prop="url" label="路由" header-align="center" align="center" width="150"></el-table-column>
-      <el-table-column prop="authority" label="授权标识" header-align="center" align="center" width="150"></el-table-column>
-      <el-table-column label="操作" fixed="right" header-align="center" align="center" width="160">
+      <el-table-column prop="url" label="路由" header-align="center" align="center"></el-table-column>
+      <el-table-column prop="authority" label="授权标识" header-align="center" align="center"></el-table-column>
+      <el-table-column label="操作" fixed="right" header-align="center" align="center" min-width="100">
         <template #default="scope">
           <el-button v-if="scope.row.type === 0" v-auth="'sys:menu:save'" type="primary" link @click="handleAdd(scope.row)"
           >新增</el-button
